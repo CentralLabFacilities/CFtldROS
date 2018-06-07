@@ -45,6 +45,7 @@ namespace tld
         "[-s] if set, user can select initial bounding box\n"
         "[-x] use dsst tracker; otherwise kcf tracker is used"
         "[-t <theta>] threshold for determining positive results\n"
+        "[-r <rostopic>] the ROS input image topic\n"
         "[-z <lastFrameNumber>] video ends at the frameNumber <lastFrameNumber>.\n"
         "    If <lastFrameNumber> is 0 or the option argument isn't specified means\n"
         "    take all frames.\n"
@@ -122,7 +123,11 @@ namespace tld
                     m_settings.m_method = IMACQ_STREAM;
                     m_methodSet = true;
                 }
-
+                else if (!strcmp(optarg, "ROS"))
+                {
+                    m_settings.m_method = IMACQ_ROS;
+                    m_methodSet = true;
+                }
                 break;
             case 'h':
                 cout << help_text;
@@ -250,6 +255,10 @@ namespace tld
             else if (method.compare("CAM") == 0)
             {
                 m_settings.m_method = IMACQ_CAM;
+            }
+            else if (method.compare("ROS") == 0)
+            {
+                m_settings.m_method = IMACQ_ROS;
             }
             else if (method.compare("LIVESIM") == 0)
             {
@@ -413,7 +422,9 @@ namespace tld
         main->tld->learningEnabled = m_settings.m_learningEnabled;
         main->selectManually = m_settings.m_selectManually;
         main->seed = m_settings.m_seed;
-
+        if (m_settings.m_method == IMACQ_ROS) {
+            main->isRosUsed = true;
+        }
         if (m_settings.m_initialBoundingBox.size() > 0)
         {
             main->initialBB = new int[4];

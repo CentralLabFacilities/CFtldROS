@@ -106,6 +106,7 @@ void imAcqInit(ImAcq *imAcq)
             exit(0);
         }
     }
+    else if (imAcq->method == IMACQ_ROS) { }
 
     imAcq->startFrame = imAcq->currentFrame;
     imAcq->startTime = cvGetTickCount();

@@ -23,8 +23,10 @@
  *      Author: Georg Nebehay
  */
 
-#include "Main.h"
+#include <chrono>
+#include <thread>
 
+#include "Main.h"
 #include "Config.h"
 #include "ImAcq.h"
 #include "Gui.h"
@@ -32,14 +34,38 @@
 #include "Trajectory.h"
 #include "opencv2/imgproc/imgproc.hpp"
 
+// ROS
+#include <ros/ros.h>
+
 using namespace tld;
 using namespace cv;
 
 void Main::doWork()
 {
     Trajectory trajectory;
-    IplImage *img = imAcqGetImg(imAcq);
-    Mat colorImage = cvarrToMat(img, true);
+
+    Mat colorImage;
+    IplImage *img;
+
+    if (!isRosUsed) {
+        printf(">> ROS IS OFF\n");
+        img = imAcqGetImg(imAcq);
+        colorImage = cvarrToMat(img, true);
+    } else {
+        ROS_INFO(">> ROS IS ON");
+        // first spin, to get callback in the queue
+        ros::spinOnce();
+        ros_grabber->getImage(&colorImage);
+        while (colorImage.rows*colorImage.cols < 1) {
+            ros::spinOnce();
+            ROS_INFO(">> waiting for new image ...");
+            ros_grabber->getImage(&colorImage);
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            last_frame_nr = ros_grabber->getLastFrameNr();
+
+        }
+        img = new IplImage(colorImage);
+    }
 
     if (colorImage.channels() == 1)
         cv::cvtColor(colorImage, colorImage, cv::COLOR_GRAY2BGR);
@@ -91,7 +117,6 @@ void Main::doWork()
     if (initialBB != NULL)
     {
         Rect bb = tldArrayToRect(initialBB);
-
         printf("Starting at %d %d %d %d\n", bb.x, bb.y, bb.width, bb.height);
         tic = static_cast<double>(getTickCount());
         tld->selectObject(colorImage, &bb);
@@ -100,13 +125,33 @@ void Main::doWork()
         reuseFrameOnce = true;
     }
 
+    // imAcqHasMoreFrames(imAcq)
     while (imAcqHasMoreFrames(imAcq))
     {
+        // Loop spinner
+        ros::spinOnce();
+
+        // Make sure we only run with image framerate to save CPU cycles
+        if(isRosUsed) {
+            if(!(ros_grabber->getLastFrameNr() != last_frame_nr)) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+                last_frame_nr = ros_grabber->getLastFrameNr();
+                continue;
+            }
+        }
+
         if (!reuseFrameOnce && (!paused || step))
         {
-            cvReleaseImage(&img);
-            img = imAcqGetImg(imAcq);
-            colorImage = cvarrToMat(img, true);
+
+            if (!isRosUsed) {
+                cvReleaseImage(&img);
+                img = imAcqGetImg(imAcq);
+                colorImage = cvarrToMat(img, true);
+            } else {
+                ros_grabber->getImage(&colorImage);
+                img = new IplImage(colorImage);
+                last_frame_nr = ros_grabber->getLastFrameNr();
+            }
 
             if (colorImage.channels() == 1)
                 cv::cvtColor(colorImage, colorImage, cv::COLOR_GRAY2BGR);
@@ -238,8 +283,12 @@ void Main::doWork()
         }
     }
 
-    cvReleaseImage(&img);
+    if (!isRosUsed) {
+        cvReleaseImage(&img);
+    }
+
     img = NULL;
+    delete ros_grabber;
 
     if (resultsFile)
     {

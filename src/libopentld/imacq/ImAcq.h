@@ -40,7 +40,8 @@ enum ImacqMethod
     IMACQ_CAM, //!< Camera
     IMACQ_VID, //!< Video
     IMACQ_LIVESIM, //!< Livesim
-    IMACQ_STREAM //!< Stream
+    IMACQ_STREAM, //!< Stream
+    IMACQ_ROS //!< ROS
 };
 
 typedef struct

@@ -57,7 +57,7 @@ namespace tld
         bool m_alternating; //!< if set to true, detector is disabled while tracker is running.
         bool m_useDsstTracker;
         int m_trajectory; //!< specifies the number of the last frames which are considered by the trajectory; 0 disables the trajectory
-        int m_method; //!< method of capturing: IMACQ_CAM, IMACQ_IMGS or IMACQ_VID
+        int m_method; //!< method of capturing: IMACQ_CAM, IMACQ_IMGS, IMACQ_VID, ROS
         int m_startFrame; //!< first frame of capturing
         int m_lastFrame; //!< last frame of caputing; 0 means take all frames
         int m_minScale; //!< number of scales smaller than initial object size

@@ -32,6 +32,9 @@
 #include "Gui.h"
 #include "cf_tracker.hpp"
 
+// ROS
+#include "ros/ros_grabber.hpp"
+
 enum Retval
 {
     PROGRAM_EXIT = 0,
@@ -44,6 +47,8 @@ public:
     tld::TLD *tld;
     ImAcq *imAcq;
     tld::Gui *gui;
+    ROSGrabber *ros_grabber;
+
     bool showOutput;
     bool showTrajectory;
     int trajectoryLength;
@@ -57,9 +62,11 @@ public:
     bool reinit;
     bool exportModelAfterRun;
     bool loadModel;
+    bool isRosUsed;
     const char *modelPath;
     const char *modelExportFile;
     int seed;
+    int last_frame_nr;
 
     Main()
     {
@@ -72,6 +79,8 @@ public:
 
         showTrajectory = false;
         trajectoryLength = 0;
+
+        isRosUsed = false;
 
         selectManually = 0;
 
@@ -89,6 +98,8 @@ public:
         gui = NULL;
         modelPath = NULL;
         imAcq = NULL;
+
+        last_frame_nr = -1;
     }
 
     ~Main()

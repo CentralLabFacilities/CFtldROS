@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<package>
+  <name>cf_tld_ros</name>
+  <version>1.4.0</version>
+  <description> This fork uses C++ implementations of correlation filter
+                based trackers as short-term trackers. Both short-term trackers
+                are modified variants of visual trackers.
+  </description>
+
+  <!-- One maintainer tag required, multiple allowed, one person per tag -->
+  <maintainer email="flier@techfak.uni-bielefeld.de">Florian Lier</maintainer>
+
+  <!-- One license tag required, multiple allowed, one license per tag -->
+  <!-- Commonly used license strings: -->
+  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
+  <license>GPLv3</license>
+
+  <!-- Url tags are optional, but mutiple are allowed, one per tag -->
+  <!-- Optional attribute type can be: website, bugtracker, or repository -->
+  <!-- Example: -->
+  <url type="website">https://github.com/warp1337/CFtldROS.git</url> -->
+
+  <!-- Author tags are optional, mutiple are allowed, one per tag -->
+  <!-- Authors do not have to be maintianers, but could be -->
+  <!-- Example: -->
+  <author email="flier@techfak.uni-bielefeld.de">Florian Lier</author> -->
+
+  <!-- The *_depend tags are used to specify dependencies -->
+  <!-- Dependencies can be catkin packages or system dependencies -->
+  <!-- Examples: -->
+  <!-- Use build_depend for packages you need at compile time: -->
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend>message_filters</build_depend>
+  <build_depend>image_transport</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>people_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>message_runtime</build_depend>
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>bayes_people_tracker_msgs</build_depend>
+  <run_depend>bayes_people_tracker_msgs</run_depend>
+  <run_depend>message_runtime</run_depend>
+  <run_depend>message_filters</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>image_transport</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>people_msgs</run_depend>
+  <run_depend>visualization_msgs</run_depend>
+  <run_depend>tf</run_depend>
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <!--<export>-->
+    <!--<nodelet plugin="${prefix}/clf_perception_nodelets.xml"/>-->
+  <!--</export>-->
+</package>

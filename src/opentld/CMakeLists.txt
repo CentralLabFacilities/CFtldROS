@@ -15,6 +15,8 @@ endif(NOT USE_SYSTEM_LIBS)
 #-------------------------------------------------------------------------------
 # main
 add_library(main
+    main/ros/ros_grabber.cpp
+    main/ros/ros_grabber.hpp
     main/Config.cpp
     main/Gui.cpp
     main/Main.cpp
@@ -34,7 +36,7 @@ target_link_libraries(main libopentld config++ ${OpenCV_LIBS})
 add_executable(cftld
     OpenTLD.cpp)
 
-target_link_libraries(cftld main libopentld config++ ${OpenCV_LIBS})
+target_link_libraries(cftld main libopentld config++ ${OpenCV_LIBS} ${catkin_LIBRARIES})
 
 install(TARGETS cftld DESTINATION bin)
 

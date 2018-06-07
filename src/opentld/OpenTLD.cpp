@@ -27,12 +27,18 @@
 #include "Gui.h"
 #include <random>
 
+// ROS
+#include <ros/ros.h>
+#include "ros/ros_grabber.hpp"
+
 using tld::Config;
 using tld::Gui;
 using tld::Settings;
 
 int main(int argc, char **argv)
 {
+    ros::init(argc, argv, "cf_tld_ros", ros::init_options::AnonymousName);
+
     Main *main = new Main();
     Config config;
     ImAcq *imAcq = imAcqAlloc();
@@ -47,6 +53,11 @@ int main(int argc, char **argv)
     }
 
     config.configure(main);
+
+    if (main->isRosUsed) {
+        ROSGrabber *ros_grabber = new ROSGrabber("/usb_cam/image_raw_throttle");
+        main->ros_grabber = ros_grabber;
+    }
 
     main->tld->seed = main->seed;
     imAcqInit(imAcq);

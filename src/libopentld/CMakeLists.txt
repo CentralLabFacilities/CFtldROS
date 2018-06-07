@@ -29,5 +29,4 @@ add_library(libopentld
     tld/VarianceFilter.h)
 
 target_link_libraries(libopentld ${OpenCV_LIBS})
-
 set_target_properties(libopentld PROPERTIES OUTPUT_NAME opentld)
