@@ -55,7 +55,7 @@ int main(int argc, char **argv)
     config.configure(main);
 
     if (main->isRosUsed) {
-        ROSGrabber *ros_grabber = new ROSGrabber("/usb_cam/image_raw_throttle");
+        ROSGrabber *ros_grabber = new ROSGrabber("/pepper_robot/camera/front/image_raw");
         main->ros_grabber = ros_grabber;
     }
 
