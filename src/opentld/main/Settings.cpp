@@ -36,10 +36,10 @@ namespace tld
         m_detectorEnabled(true),
         m_selectManually(false),
         m_learningEnabled(true),
-        m_showOutput(true),
-        m_showNotConfident(true),
-        m_showColorImage(false),
-        m_showDetections(false),
+        m_showOutput(true),         // true
+        m_showNotConfident(true),   // true
+        m_showColorImage(false),    // false
+        m_showDetections(false),    // false
         m_saveOutput(false),
         m_alternating(false),
         m_useDsstTracker(false),
@@ -47,15 +47,15 @@ namespace tld
         m_method(IMACQ_CAM),
         m_startFrame(1),
         m_lastFrame(0),
-        m_minScale(-10),
-        m_maxScale(10),
-        m_numFeatures(13),
-        m_numTrees(10),
+        m_minScale(-10),    // -10
+        m_maxScale(10),     // 10
+        m_numFeatures(13),  // 13
+        m_numTrees(10),     // 10
         m_thetaP(0.55f),
         m_thetaN(0.5f),
         m_minSize(25),
         m_camNo(0),
-        m_fps(24),
+        m_fps(24),          // 24
         m_seed(0),
         m_threshold(0.7f),
         m_proportionalShift(0.1f),

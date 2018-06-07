@@ -58,7 +58,7 @@ void Main::doWork()
         ros_grabber->getImage(&colorImage);
         while (colorImage.rows*colorImage.cols < 1) {
             ros::spinOnce();
-            ROS_INFO(">> waiting for new image ...");
+            // ROS_INFO(">> waiting for new image ...");
             ros_grabber->getImage(&colorImage);
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
             last_frame_nr = ros_grabber->getLastFrameNr();
@@ -120,7 +120,7 @@ void Main::doWork()
         printf("Starting at %d %d %d %d\n", bb.x, bb.y, bb.width, bb.height);
         tic = static_cast<double>(getTickCount());
         tld->selectObject(colorImage, &bb);
-        toc = getTickCount() - tic;
+        toc = static_cast<double>(getTickCount()) - tic;
         skipProcessingOnce = true;
         reuseFrameOnce = true;
     }
@@ -134,8 +134,9 @@ void Main::doWork()
         // Make sure we only run with image framerate to save CPU cycles
         if(isRosUsed) {
             if(!(ros_grabber->getLastFrameNr() != last_frame_nr)) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 last_frame_nr = ros_grabber->getLastFrameNr();
+                // ROS_INFO("Skipping computation step ...");
                 continue;
             }
         }
@@ -167,14 +168,14 @@ void Main::doWork()
         {
             tic = static_cast<double>(getTickCount());
             tld->processImage(colorImage);
-            toc = getTickCount() - tic;
+            toc = static_cast<double>(getTickCount()) - tic;
         }
         else
         {
             skipProcessingOnce = false;
         }
 
-        float fps = static_cast<float>(getTickFrequency() / toc);
+        float fps = static_cast<float>(getTickFrequency()) / toc;
 
         if (printResults != NULL)
         {
@@ -203,8 +204,8 @@ void Main::doWork()
                 strcpy(learningString, "Learning");
             }
 
-            sprintf(string, "#%d, fps: %.2f, #numwindows:%d, %s", imAcq->currentFrame - 1,
-                fps, tld->detectorCascade->numWindows, learningString);
+            sprintf(string, "#%d, process fps: %.2f, #numwindows:%d, %s", imAcq->currentFrame - 1,
+                    fps, tld->detectorCascade->numWindows, learningString);
             CvScalar yellow = CV_RGB(255, 255, 0);
             CvScalar blue = CV_RGB(0, 0, 255);
             CvScalar black = CV_RGB(0, 0, 0);
@@ -219,7 +220,7 @@ void Main::doWork()
 
             CvFont font;
             cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .5, .5, 0, 2, 8);
-            //cvRectangle(img, cvPoint(0, 0), cvPoint(img->width, 50), black, CV_FILLED, 8, 0);
+            // cvRectangle(img, cvPoint(0, 0), cvPoint(img->width, 50), black, CV_FILLED, 8, 0);
             cvPutText(img, string, cvPoint(25, 25), &font, red);
 
             if (showOutput)
@@ -272,7 +273,6 @@ void Main::doWork()
             {
                 char fileName[256];
                 sprintf(fileName, "%s/%.5d.png", saveDir, imAcq->currentFrame - 1);
-
                 cvSaveImage(fileName, img);
             }
         }

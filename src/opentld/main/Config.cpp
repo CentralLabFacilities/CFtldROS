@@ -36,6 +36,7 @@ namespace tld
         "    CAM: capture from connected camera\n"
         "    VID: capture from a video\n"
         "    STREAM: capture from a stream\n"
+        "    ROS: capture from ros topic\n"
         "[-e <path>] export model after run to <path>\n"
         "[-i <path>] <path> to the images or to the video\n"
         "[-h] shows help\n"
@@ -409,19 +410,45 @@ namespace tld
 
         // main
         main->tld->trackerEnabled = m_settings.m_trackerEnabled;
+        std::cout << "m_settings.m_trackerEnabled: " << m_settings.m_trackerEnabled << std::endl;
+
         main->tld->detectorEnabled = m_settings.m_detectorEnabled;
+        std::cout << "m_settings.m_detectorEnabled: " << m_settings.m_detectorEnabled << std::endl;
+
         main->tld->init(m_settings.m_useDsstTracker);
+        std::cout << "m_settings.m_useDsstTracker: " << m_settings.m_useDsstTracker << std::endl;
+
         main->showOutput = m_settings.m_showOutput;
+        std::cout << "m_settings.m_showOutput: " << m_settings.m_showOutput << std::endl;
+
         main->showTrajectory = (m_settings.m_trajectory) ? true : false;
+        std::cout << "m_settings.m_trajectory: " << m_settings.m_trajectory << std::endl;
+
         main->trajectoryLength = m_settings.m_trajectory;
+        std::cout << "m_settings.m_trajectory: " << m_settings.m_trajectory << std::endl;
+
         main->printResults = (m_settings.m_printResults.empty()) ? NULL : m_settings.m_printResults.c_str();
+
         main->saveDir = (m_settings.m_outputDir.empty()) ? NULL : m_settings.m_outputDir.c_str();
+
         main->threshold = m_settings.m_threshold;
+        std::cout << "m_settings.m_threshold: " << m_settings.m_threshold << std::endl;
+
         main->showNotConfident = m_settings.m_showNotConfident;
+        std::cout << "m_settings.m_showNotConfident: " << m_settings.m_showNotConfident << std::endl;
+
         main->tld->alternating = m_settings.m_alternating;
+        std::cout << "m_settings.m_alternating: " << m_settings.m_alternating << std::endl;
+
         main->tld->learningEnabled = m_settings.m_learningEnabled;
+        std::cout << "m_settings.m_learningEnabled: " << m_settings.m_learningEnabled << std::endl;
+
         main->selectManually = m_settings.m_selectManually;
+        std::cout << "m_settings.m_selectManually: " << m_settings.m_selectManually << std::endl;
+
         main->seed = m_settings.m_seed;
+        std::cout << "m_settings.m_seed: " << m_settings.m_seed << std::endl;
+
         if (m_settings.m_method == IMACQ_ROS) {
             main->isRosUsed = true;
         }
@@ -437,19 +464,41 @@ namespace tld
 
         DetectorCascade *detectorCascade = main->tld->detectorCascade;
         detectorCascade->varianceFilter->enabled = m_settings.m_varianceFilterEnabled;
+        std::cout << "m_varianceFilterEnabled: " << m_settings.m_varianceFilterEnabled << std::endl;
+
         detectorCascade->ensembleClassifier->enabled = m_settings.m_ensembleClassifierEnabled;
+        std::cout << "m_ensembleClassifierEnabled: " << m_settings.m_ensembleClassifierEnabled << std::endl;
+
         detectorCascade->nnClassifier->enabled = m_settings.m_nnClassifierEnabled;
+        std::cout << "m_settings.m_nnClassifierEnabled: " << m_settings.m_nnClassifierEnabled << std::endl;
 
         // classifier
         detectorCascade->useShift = m_settings.m_useProportionalShift;
+        std::cout << "m_settings.m_useProportionalShift: " << m_settings.m_useProportionalShift << std::endl;
+
         detectorCascade->shift = m_settings.m_proportionalShift;
+        std::cout << "m_settings.m_proportionalShift: " << m_settings.m_proportionalShift << std::endl;
+
         detectorCascade->minScale = m_settings.m_minScale;
+        std::cout << "m_settings.m_minScale: " << m_settings.m_minScale << std::endl;
+
         detectorCascade->maxScale = m_settings.m_maxScale;
+        std::cout << "m_settings.m_maxScale: " << m_settings.m_maxScale << std::endl;
+
         detectorCascade->minSize = m_settings.m_minSize;
+        std::cout << "m_settings.m_minSize: " << m_settings.m_minSize << std::endl;
+
         detectorCascade->numTrees = m_settings.m_numTrees;
+        std::cout << "m_settings.m_numTrees: " << m_settings.m_numTrees << std::endl;
+
         detectorCascade->numFeatures = m_settings.m_numFeatures;
+        std::cout << "m_settings.m_numFeatures: " << m_settings.m_numFeatures << std::endl;
+
         detectorCascade->nnClassifier->thetaTP = m_settings.m_thetaP;
+        std::cout << "m_settings.m_thetaP: " << m_settings.m_thetaP << std::endl;
+
         detectorCascade->nnClassifier->thetaFP = m_settings.m_thetaN;
+        std::cout << "m_settings.m_thetaN: " << m_settings.m_thetaN << std::endl;
 
         return SUCCESS;
     }
