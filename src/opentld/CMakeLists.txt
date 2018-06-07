@@ -38,7 +38,16 @@ add_executable(cftld
 
 target_link_libraries(cftld main libopentld config++ ${OpenCV_LIBS} ${catkin_LIBRARIES})
 
-install(TARGETS cftld DESTINATION bin)
+# install(TARGETS cftld DESTINATION bin)
+
+INSTALL(TARGETS cftld RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+INSTALL(TARGETS main
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
+
+# Remember to add launch files
+# INSTALL(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/data" DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 #-------------------------------------------------------------------------------
 

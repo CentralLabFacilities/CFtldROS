@@ -30,3 +30,8 @@ add_library(libopentld
 
 target_link_libraries(libopentld ${OpenCV_LIBS})
 set_target_properties(libopentld PROPERTIES OUTPUT_NAME opentld)
+
+INSTALL(TARGETS libopentld
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
