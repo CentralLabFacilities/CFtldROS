@@ -42,6 +42,7 @@ namespace tld
         "[-h] shows help\n"
         "[-j <number>] specifies the <number> of the last frames which are considered by the trajectory; 0 disables the trajectory\n"
         "[-n <number>] specifies which camera device to use.\n"
+        "[-O ] no output window.\n"
         "[-p <path>] prints results into the file <path>\n"
         "[-s] if set, user can select initial bounding box\n"
         "[-x] use dsst tracker; otherwise kcf tracker is used"

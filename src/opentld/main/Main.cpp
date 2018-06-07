@@ -36,6 +36,8 @@
 
 // ROS
 #include <ros/ros.h>
+#include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
 
 using namespace tld;
 using namespace cv;
@@ -46,6 +48,9 @@ void Main::doWork()
 
     Mat colorImage;
     IplImage *img;
+
+    image_transport::ImageTransport it(ros_grabber->node_handle_);
+    image_transport::Publisher pub = it.advertise("cftld/detection", 1);
 
     if (!isRosUsed) {
         printf(">> ROS IS OFF\n");
@@ -64,6 +69,7 @@ void Main::doWork()
             last_frame_nr = ros_grabber->getLastFrameNr();
 
         }
+        cv::resize(colorImage, colorImage, cv::Size(), 0.50, 0.50);
         img = new IplImage(colorImage);
     }
 
@@ -150,6 +156,7 @@ void Main::doWork()
                 colorImage = cvarrToMat(img, true);
             } else {
                 ros_grabber->getImage(&colorImage);
+                cv::resize(colorImage, colorImage, cv::Size(), 0.50, 0.50);
                 img = new IplImage(colorImage);
                 last_frame_nr = ros_grabber->getLastFrameNr();
             }
@@ -191,7 +198,7 @@ void Main::doWork()
             }
         }
 
-        if (showOutput || saveDir != NULL)
+        if (showOutput || saveDir != NULL || isRosUsed)
         {
             char string[128];
             char learningString[10] = "";
@@ -222,6 +229,9 @@ void Main::doWork()
             cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .5, .5, 0, 2, 8);
             // cvRectangle(img, cvPoint(0, 0), cvPoint(img->width, 50), black, CV_FILLED, 8, 0);
             cvPutText(img, string, cvPoint(25, 25), &font, red);
+
+            sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", cvarrToMat(img, false)).toImageMsg();
+            pub.publish(msg);
 
             if (showOutput)
             {
