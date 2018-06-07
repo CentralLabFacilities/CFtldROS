@@ -56,7 +56,9 @@ int main(int argc, char **argv)
 
     if (main->isRosUsed) {
         ROSGrabber *ros_grabber = new ROSGrabber("/pepper_robot/camera/front/image_raw");
+        ROSGrabber *ros_grabber_depth = new ROSGrabber("/pepper_robot/camera/depth/image_raw");
         main->ros_grabber = ros_grabber;
+        main->ros_grabber_depth = ros_grabber_depth;
     }
 
     main->tld->seed = main->seed;

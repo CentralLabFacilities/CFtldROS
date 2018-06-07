@@ -48,6 +48,7 @@ public:
     ImAcq *imAcq;
     tld::Gui *gui;
     ROSGrabber *ros_grabber;
+    ROSGrabber *ros_grabber_depth;
 
     bool showOutput;
     bool showTrajectory;

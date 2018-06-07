@@ -38,6 +38,7 @@
 #include <ros/ros.h>
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
+#include <geometry_msgs/PoseStamped.h>
 
 using namespace tld;
 using namespace cv;
@@ -46,11 +47,12 @@ void Main::doWork()
 {
     Trajectory trajectory;
 
-    Mat colorImage;
+    Mat colorImage, depthImage;
     IplImage *img;
 
     image_transport::ImageTransport it(ros_grabber->node_handle_);
     image_transport::Publisher pub = it.advertise("cftld/detection", 1);
+    ros::Publisher pose_pub = ros_grabber_depth->node_handle_.advertise<geometry_msgs::PoseStamped>("cftld/pose_stamped", 1);
 
     if (!isRosUsed) {
         printf(">> ROS IS OFF\n");
@@ -61,14 +63,17 @@ void Main::doWork()
         // first spin, to get callback in the queue
         ros::spinOnce();
         ros_grabber->getImage(&colorImage);
-        while (colorImage.rows*colorImage.cols < 1) {
+        ros_grabber_depth->getImage(&depthImage);
+        while (colorImage.rows*colorImage.cols < 1 || depthImage.rows * depthImage.cols < 1) {
             ros::spinOnce();
             // ROS_INFO(">> waiting for new image ...");
             ros_grabber->getImage(&colorImage);
+            ros_grabber_depth->getImage(&depthImage);
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
             last_frame_nr = ros_grabber->getLastFrameNr();
 
         }
+        cv::resize(depthImage, depthImage, cv::Size(), 0.50, 0.50);
         cv::resize(colorImage, colorImage, cv::Size(), 0.50, 0.50);
         img = new IplImage(colorImage);
     }
@@ -156,6 +161,8 @@ void Main::doWork()
                 colorImage = cvarrToMat(img, true);
             } else {
                 ros_grabber->getImage(&colorImage);
+                ros_grabber_depth->getImage(&depthImage);
+                cv::resize(depthImage, depthImage, cv::Size(), 0.50, 0.50);
                 cv::resize(colorImage, colorImage, cv::Size(), 0.50, 0.50);
                 img = new IplImage(colorImage);
                 last_frame_nr = ros_grabber->getLastFrameNr();
@@ -223,6 +230,15 @@ void Main::doWork()
             {
                 CvScalar rectangleColor = red;
                 cvRectangle(img, tld->currBB->tl(), tld->currBB->br(), rectangleColor, 2, 8, 0);
+
+                double center_x = (tld->currBB->br().x - tld->currBB->tl().x/2)/2;
+                double center_y = (tld->currBB->br().y - tld->currBB->tl().y/2)/2;
+                geometry_msgs::PoseStamped pose = ros_grabber_depth->getDetectionPose(depthImage, center_x + 0.5f, center_y + 0.5f,
+                                                    float(depthImage.cols/2)-0.5f, float(depthImage.rows/2)-0.5f);
+
+                if (pose.header.frame_id != "invalid") {
+                    pose_pub.publish(pose);
+                }
             }
 
             CvFont font;

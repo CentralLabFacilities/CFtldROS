@@ -48,9 +48,13 @@ the use of this software, even if advised of the possibility of such damage.
 // SELF
 #include "ros_grabber.hpp"
 
+using namespace cv;
+using namespace std;
 
 ROSGrabber::ROSGrabber(std::string i_scope) : it_(node_handle_) {
     image_sub_ = it_.subscribe(i_scope, 1, &ROSGrabber::imageCallback, this);
+    info_depth_sub = node_handle_.subscribe("/pepper_robot/camera/depth/camera_info", 1, &ROSGrabber::depthInfoCallback, this);
+    listener = new tf::TransformListener();
     frame_nr = -1;
     pyr = 0;
     ROS_INFO(">> ros grabber init done");
@@ -99,4 +103,139 @@ ros::Time ROSGrabber::getTimestamp() {
 
 int ROSGrabber::getLastFrameNr() {
     return frame_nr;
+}
+
+void ROSGrabber::depthInfoCallback(const sensor_msgs::CameraInfoConstPtr& cameraInfoMsg) {
+    if(!depthConstant_factor_is_set) {
+        ROS_INFO(">>> Setting depthConstant_factor");
+        depthConstant_factor = cameraInfoMsg->K[4];
+        camera_image_rgb_width = cameraInfoMsg->width; //Depth and rgb will be halved afterwards so this is okay
+        camera_image_depth_width = cameraInfoMsg->width/2;
+        depthConstant_factor_is_set = true;
+    } else {
+      // Unsubscribe, we only need that once.
+      info_depth_sub.shutdown();
+    }
+}
+
+geometry_msgs::PoseStamped ROSGrabber::getDetectionPose(const cv::Mat & depthImage, int x, int y, float cx, float cy) {
+
+    geometry_msgs::PoseStamped base_link_pose;
+    base_link_pose.header.frame_id = "invalid";
+
+    cv::Vec3f center3D = getDepth(depthImage, x, y, cx, cy);
+
+    if (isfinite(center3D.val[0]) && isfinite(center3D.val[1]) && isfinite(center3D.val[2])) {
+        geometry_msgs::PoseStamped camera_pose;
+        camera_pose.header.frame_id = frame_id;
+        camera_pose.header.stamp = ros::Time::now();
+        camera_pose.pose.position.x = center3D.val[0];
+        camera_pose.pose.position.y = center3D.val[1];
+        camera_pose.pose.position.z = center3D.val[2];
+        camera_pose.pose.orientation.x = 0.0;
+        camera_pose.pose.orientation.y = 0.0;
+        camera_pose.pose.orientation.z = 0.0;
+        camera_pose.pose.orientation.w = 1.0;
+
+        base_link_pose.header.frame_id = "base_link";
+
+        try{
+            ROS_DEBUG("Transforming received position into BASELINK coordinate system.");
+            listener->waitForTransform(camera_pose.header.frame_id, base_link_pose.header.frame_id, camera_pose.header.stamp, ros::Duration(3.0));
+            listener->transformPose(base_link_pose.header.frame_id, ros::Time(0), camera_pose, camera_pose.header.frame_id, base_link_pose);
+        } catch(tf::TransformException ex) {
+            ROS_WARN("Failed transform: %s", ex.what());
+            base_link_pose = camera_pose;
+        }
+    }
+
+    return base_link_pose;
+
+}
+
+cv::Vec3f ROSGrabber::getDepth(const cv::Mat & depthImage, int x, int y, float cx, float cy) {
+	if(!(x >=0 && x<depthImage.cols && y >=0 && y<depthImage.rows))
+	{
+		ROS_ERROR(">>> Point must be inside the image (x=%d, y=%d), image size=(%d,%d)", x, y, depthImage.cols, depthImage.rows);
+		return Vec3f(
+				numeric_limits<float>::quiet_NaN(),
+				numeric_limits<float>::quiet_NaN(),
+				numeric_limits<float>::quiet_NaN());
+	}
+
+	cv::Vec3f pt;
+
+	// Use correct principal point from calibration
+	float center_x = cx; //cameraInfo.K.at(2)
+	float center_y = cy; //cameraInfo.K.at(5)
+
+	bool isInMM = depthImage.type() == CV_16UC1; // is in mm?
+
+	// Combine unit conversion (if necessary) with scaling by focal length for computing (X,Y)
+	float unit_scaling = isInMM?0.001f:1.0f;
+	float constant_x = unit_scaling / (1.0f/depthConstant_); //cameraInfo.K.at(0)
+	float constant_y = unit_scaling / (1.0f/depthConstant_); //cameraInfo.K.at(4)
+	float bad_point = numeric_limits<float>::quiet_NaN();
+
+	float depth;
+	bool isValid;
+
+	if(isInMM) {
+	    // ROS_DEBUG(">>> Image is in Millimeters");
+	    float depth_samples[21];
+
+        // Sample fore depth points to the right, left, top and down
+        for (int i=0; i<5; i++) {
+            depth_samples[i] = (float)depthImage.at<uint16_t>(y,x+i);
+            depth_samples[i+5] = (float)depthImage.at<uint16_t>(y,x-i);
+            depth_samples[i+10] = (float)depthImage.at<uint16_t>(y+i,x);
+            depth_samples[i+15] = (float)depthImage.at<uint16_t>(y-i,x);
+        }
+
+        depth_samples[20] = (float)depthImage.at<uint16_t>(y, x);
+
+        int arr_size = sizeof(depth_samples)/sizeof(float);
+        sort(&depth_samples[0], &depth_samples[arr_size]);
+        float median = arr_size % 2 ? depth_samples[arr_size/2] : (depth_samples[arr_size/2-1] + depth_samples[arr_size/2]) / 2;
+
+        depth = median;
+		ROS_DEBUG("%f", depth);
+		isValid = depth != 0.0f;
+
+	} else {
+		// ROS_DEBUG(">>> Image is in Meters");
+		float depth_samples[21];
+
+        // Sample fore depth points to the right, left, top and down
+        for (int i=0; i<5; i++) {
+            depth_samples[i] = depthImage.at<float>(y,x+i);
+            depth_samples[i+5] = depthImage.at<float>(y,x-i);
+            depth_samples[i+10] = depthImage.at<float>(y+i,x);
+            depth_samples[i+15] = depthImage.at<float>(y-i,x);
+        }
+
+        depth_samples[20] = depthImage.at<float>(y,x);
+
+        int arr_size = sizeof(depth_samples)/sizeof(float);
+        sort(&depth_samples[0], &depth_samples[arr_size]);
+        float median = arr_size % 2 ? depth_samples[arr_size/2] : (depth_samples[arr_size/2-1] + depth_samples[arr_size/2]) / 2;
+
+        depth = median;
+        ROS_DEBUG("%f", depth);
+		isValid = isfinite(depth);
+	}
+
+	// Check for invalid measurements
+	if (!isValid)
+	{
+	    ROS_DEBUG(">>> WARN Image is invalid, whoopsie.");
+		pt.val[0] = pt.val[1] = pt.val[2] = bad_point;
+	} else{
+		// Fill in XYZ
+		pt.val[0] = (float(x) - center_x) * depth * constant_x;
+		pt.val[1] = (float(y) - center_y) * depth * constant_y;
+		pt.val[2] = depth*unit_scaling;
+	}
+
+	return pt;
 }
