@@ -50,9 +50,11 @@ void Main::doWork()
     Mat colorImage, depthImage;
     IplImage *img;
 
+    ROS_INFO(">> Setting up ros subcribers");
     image_transport::ImageTransport it(ros_grabber->node_handle_);
     image_transport::Publisher pub = it.advertise("cftld/detection", 1);
     ros::Publisher pose_pub = ros_grabber_depth->node_handle_.advertise<geometry_msgs::PoseStamped>("cftld/pose_stamped", 1);
+    ROS_INFO(">> Subscribers initialized");
 
     if (!isRosUsed) {
         printf(">> ROS IS OFF\n");

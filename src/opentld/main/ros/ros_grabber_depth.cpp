@@ -127,7 +127,6 @@ void ROSGrabberDepth::depthInfoCallback(const sensor_msgs::CameraInfoConstPtr& c
 }
 
 geometry_msgs::PoseStamped ROSGrabberDepth::getDetectionPose(const cv::Mat & depthImage, int x, int y, float cx, float cy) {
-    ROS_INFO(">> Entered get detection pose function");
     geometry_msgs::PoseStamped base_link_pose;
     base_link_pose.header.frame_id = "invalid";
 
@@ -162,8 +161,7 @@ geometry_msgs::PoseStamped ROSGrabberDepth::getDetectionPose(const cv::Mat & dep
 }
 
 cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, int x, int y, float cx, float cy) {
-    ROS_INFO(">> Entered get depth");
-	if(!(x >=0 && x<depthImage.cols && y >=0 && y<depthImage.rows))
+    if(!(x >=0 && x<depthImage.cols && y >=0 && y<depthImage.rows))
 	{
 		ROS_ERROR(">>> Point must be inside the image (x=%d, y=%d), image size=(%d,%d)", x, y, depthImage.cols, depthImage.rows);
 		return Vec3f(
