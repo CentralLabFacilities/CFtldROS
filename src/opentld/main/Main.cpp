@@ -251,6 +251,7 @@ void Main::doWork()
 
             if (showOutput)
             {
+                ROS_DEBUG("Entered show output");
                 gui->showImage(img);
                 char key = gui->getKey();
 

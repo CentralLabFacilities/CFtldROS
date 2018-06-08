@@ -52,13 +52,14 @@ using namespace cv;
 using namespace std;
 
 ROSGrabberDepth::ROSGrabberDepth(std::string i_scope) : it_(node_handle_) {
+    ROS_INFO(">> initializing ros grabber depth");
     image_sub_ = it_.subscribe(i_scope, 1, &ROSGrabberDepth::imageCallback, this);
     info_depth_sub = node_handle_.subscribe("/pepper_robot/camera/depth/camera_info", 1, &ROSGrabberDepth::depthInfoCallback, this);
     listener = new tf::TransformListener();
     frame_nr = -1;
     pyr = 0;
-    ROS_INFO(">> ros grabber init done");
-    ROS_INFO(">> ros grabber subscribing to %s", i_scope.c_str());
+    ROS_INFO(">> ros grabber depth init done");
+    ROS_INFO(">> ros grabber depth subscribing to %s", i_scope.c_str());
 }
 
 ROSGrabberDepth::~ROSGrabberDepth() { }
@@ -112,6 +113,7 @@ int ROSGrabberDepth::getLastFrameNr() {
 }
 
 void ROSGrabberDepth::depthInfoCallback(const sensor_msgs::CameraInfoConstPtr& cameraInfoMsg) {
+    ROS_INFO(">> Entered depth info callback");
     if(!depthConstant_factor_is_set) {
         ROS_INFO(">>> Setting depthConstant_factor");
         depthConstant_factor = cameraInfoMsg->K[4];
@@ -125,7 +127,7 @@ void ROSGrabberDepth::depthInfoCallback(const sensor_msgs::CameraInfoConstPtr& c
 }
 
 geometry_msgs::PoseStamped ROSGrabberDepth::getDetectionPose(const cv::Mat & depthImage, int x, int y, float cx, float cy) {
-
+    ROS_INFO(">> Entered get detection pose function");
     geometry_msgs::PoseStamped base_link_pose;
     base_link_pose.header.frame_id = "invalid";
 
@@ -160,6 +162,7 @@ geometry_msgs::PoseStamped ROSGrabberDepth::getDetectionPose(const cv::Mat & dep
 }
 
 cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, int x, int y, float cx, float cy) {
+    ROS_INFO(">> Entered get depth");
 	if(!(x >=0 && x<depthImage.cols && y >=0 && y<depthImage.rows))
 	{
 		ROS_ERROR(">>> Point must be inside the image (x=%d, y=%d), image size=(%d,%d)", x, y, depthImage.cols, depthImage.rows);
