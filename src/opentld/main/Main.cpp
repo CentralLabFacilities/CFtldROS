@@ -25,6 +25,7 @@
 
 #include <chrono>
 #include <thread>
+#include <signal.h>
 
 #include "Main.h"
 #include "Config.h"
@@ -46,40 +47,51 @@
 using namespace tld;
 using namespace cv;
 
+bool stop = false;
+
+void inthand(int signum) {
+    printf(">> CTRL+C...\n");
+    stop = true;
+}
+
 void Main::doWork()
 {
+
+    signal(SIGINT, inthand);
+
     Trajectory trajectory;
 
     Mat colorImage, depthImage;
     IplImage *img;
 
-    ROS_INFO(">> Setting up ros subcribers");
+    ROS_INFO(">>> Setting up ros subcribers");
     image_transport::ImageTransport it(ros_grabber->node_handle_);
     image_transport::Publisher pub = it.advertise("cftld/detection", 1);
     ros::Publisher pub_detect_heads = ros_grabber_depth->node_handle_.advertise<bayes_people_tracker_msgs::PeopleWithHead>("/cftld/people_with_head", 1);
     ros::Publisher pub_marker_array = ros_grabber_depth->node_handle_.advertise<visualization_msgs::MarkerArray>("/cftld/marker_array", 1);
-    ROS_INFO(">> Subscribers initialized");
+    ROS_INFO(">>> Subscribers initialized");
 
     if (!isRosUsed) {
         printf(">> ROS IS OFF\n");
         img = imAcqGetImg(imAcq);
         colorImage = cvarrToMat(img, true);
     } else {
-        ROS_INFO(">> ROS IS ON");
+        ROS_DEBUG(">>> ROS IS ON");
         // first spin, to get callback in the queue
         ros::spinOnce();
         ros_grabber->getImage(&colorImage);
         ros_grabber_depth->getImage(&depthImage);
         while (colorImage.rows*colorImage.cols < 1 || depthImage.rows * depthImage.cols < 1) {
             ros::spinOnce();
-            // ROS_INFO(">> waiting for new image ...");
             ros_grabber->getImage(&colorImage);
             ros_grabber_depth->getImage(&depthImage);
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             last_frame_nr = ros_grabber->getLastFrameNr();
-
+            if (stop) {
+                break;
+            }
         }
-        cv::resize(depthImage, depthImage, cv::Size(), 0.50, 0.50);
+        // Don't resize depth image, it is already 320x240 on Pepper!
         cv::resize(colorImage, colorImage, cv::Size(), 0.50, 0.50);
         img = new IplImage(colorImage);
     }
@@ -143,7 +155,7 @@ void Main::doWork()
     }
 
     // imAcqHasMoreFrames(imAcq)
-    while (imAcqHasMoreFrames(imAcq))
+    while (stop == false)
     {
         // Loop spinner
         ros::spinOnce();
@@ -153,7 +165,7 @@ void Main::doWork()
             if(!(ros_grabber->getLastFrameNr() != last_frame_nr)) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 last_frame_nr = ros_grabber->getLastFrameNr();
-                // ROS_INFO("Skipping computation step ...");
+                ROS_DEBUG(">>> Skipping computation step ...");
                 continue;
             }
         }
@@ -168,7 +180,6 @@ void Main::doWork()
             } else {
                 ros_grabber->getImage(&colorImage);
                 ros_grabber_depth->getImage(&depthImage);
-                cv::resize(depthImage, depthImage, cv::Size(), 0.50, 0.50);
                 cv::resize(colorImage, colorImage, cv::Size(), 0.50, 0.50);
                 img = new IplImage(colorImage);
                 last_frame_nr = ros_grabber->getLastFrameNr();
@@ -261,12 +272,15 @@ void Main::doWork()
             // cvRectangle(img, cvPoint(0, 0), cvPoint(img->width, 50), black, CV_FILLED, 8, 0);
             cvPutText(img, string, cvPoint(25, 25), &font, red);
 
-            sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", cvarrToMat(img, false)).toImageMsg();
-            pub.publish(msg);
+            // Publish every 10th cycle
+            if (last_frame_nr % 10 == 0)
+            {
+                sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", cvarrToMat(img, false)).toImageMsg();
+                pub.publish(msg);
+            }
 
             if (showOutput)
             {
-                ROS_DEBUG("Entered show output");
                 gui->showImage(img);
                 char key = gui->getKey();
 
@@ -323,7 +337,11 @@ void Main::doWork()
         {
             reuseFrameOnce = false;
         }
+
+        if(stop) { break; }
     }
+
+    ROS_INFO(">>> Bye Bye!");
 
     if (!isRosUsed) {
         cvReleaseImage(&img);
@@ -331,6 +349,7 @@ void Main::doWork()
 
     img = NULL;
     delete ros_grabber;
+    delete ros_grabber_depth;
 
     if (resultsFile)
     {

@@ -55,15 +55,14 @@ ROSGrabber::ROSGrabber(std::string i_scope) : it_(node_handle_) {
     image_sub_ = it_.subscribe(i_scope, 1, &ROSGrabber::imageCallback, this);
     frame_nr = -1;
     pyr = 0;
-    ROS_INFO(">> ros grabber init done");
-    ROS_INFO(">> ros grabber subscribing to %s", i_scope.c_str());
+    ROS_DEBUG(">>> ROS grabber init done");
+    ROS_INFO(">>> ROS grabber RGB %s", i_scope.c_str());
 }
 
 ROSGrabber::~ROSGrabber() { }
 
 void ROSGrabber::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
     cv_bridge::CvImagePtr cv_ptr;
-    ROS_DEBUG(">> new image");
     try {
         cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
     }

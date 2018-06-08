@@ -52,21 +52,19 @@ using namespace cv;
 using namespace std;
 
 ROSGrabberDepth::ROSGrabberDepth(std::string i_scope) : it_(node_handle_) {
-    ROS_DEBUG(">> initializing ros grabber depth");
     image_sub_ = it_.subscribe(i_scope, 1, &ROSGrabberDepth::imageCallback, this);
     info_depth_sub = node_handle_.subscribe("/pepper_robot/camera/depth/camera_info", 1, &ROSGrabberDepth::depthInfoCallback, this);
     listener = new tf::TransformListener();
     frame_nr = -1;
     pyr = 0;
-    ROS_INFO(">> ros grabber depth init done");
-    ROS_INFO(">> ros grabber depth subscribing to %s", i_scope.c_str());
+    ROS_DEBUG(">>> ROS grabber depth init done");
+    ROS_INFO(">>> ROS grabber D %s", i_scope.c_str());
 }
 
 ROSGrabberDepth::~ROSGrabberDepth() { }
 
 void ROSGrabberDepth::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
     cv_bridge::CvImagePtr cv_ptr;
-    ROS_DEBUG(">> new image");
     try {
         if (msg->encoding == "16UC1") {
            cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_16UC1);
@@ -113,7 +111,7 @@ int ROSGrabberDepth::getLastFrameNr() {
 }
 
 void ROSGrabberDepth::depthInfoCallback(const sensor_msgs::CameraInfoConstPtr& cameraInfoMsg) {
-    ROS_DEBUG(">> Entered depth info callback");
+    ROS_DEBUG(">>> Entered depth info callback");
     if(!depthConstant_factor_is_set) {
         ROS_INFO(">>> Setting depthConstant_factor");
         depthConstant_factor = cameraInfoMsg->K[4];
@@ -147,11 +145,11 @@ geometry_msgs::PoseStamped ROSGrabberDepth::getDetectionPose(const cv::Mat & dep
         base_link_pose.header.frame_id = "map";
 
         try{
-            ROS_DEBUG("Transforming received position into BASELINK coordinate system.");
+            ROS_DEBUG(">>> Transforming received position into MAP coordinate system.");
             listener->waitForTransform(camera_pose.header.frame_id, base_link_pose.header.frame_id, camera_pose.header.stamp, ros::Duration(3.0));
             listener->transformPose(base_link_pose.header.frame_id, ros::Time(0), camera_pose, camera_pose.header.frame_id, base_link_pose);
         } catch(tf::TransformException ex) {
-            ROS_ERROR("Failed transform: %s", ex.what());
+            ROS_ERROR(">>> Failed transform: %s", ex.what());
             base_link_pose = camera_pose;
         }
     }
@@ -161,7 +159,7 @@ geometry_msgs::PoseStamped ROSGrabberDepth::getDetectionPose(const cv::Mat & dep
 }
 
 void ROSGrabberDepth::createVisualisation(geometry_msgs::Pose& pose, ros::Publisher &pub) {
-    ROS_DEBUG("Creating markers");
+    ROS_DEBUG(">>> Creating markers");
     visualization_msgs::MarkerArray marker_array;
     std::vector <visualization_msgs::Marker> human = createHuman(0, pose);
     marker_array.markers.insert(marker_array.markers.begin(), human.begin(), human.end());

@@ -19,7 +19,7 @@
 
 /**
   * @author Georg Nebehay
-  */
+*/
 
 #include "Main.h"
 #include "Config.h"
@@ -35,6 +35,7 @@
 using tld::Config;
 using tld::Gui;
 using tld::Settings;
+
 
 int main(int argc, char **argv)
 {
@@ -60,7 +61,7 @@ int main(int argc, char **argv)
         ROSGrabberDepth *ros_grabber_depth = new ROSGrabberDepth("/pepper_robot/camera/depth/image_raw");
         main->ros_grabber = ros_grabber;
         main->ros_grabber_depth = ros_grabber_depth;
-        ROS_DEBUG(">> Finished ROS init");
+        ROS_DEBUG(">>> Finished ROS init");
     }
 
     main->tld->seed = main->seed;
@@ -68,7 +69,7 @@ int main(int argc, char **argv)
 
     if (main->showOutput)
     {
-        ROS_INFO(">> Initializing GUI");
+        ROS_DEBUG(">>> Initializing GUI");
         gui->init();
     }
 
