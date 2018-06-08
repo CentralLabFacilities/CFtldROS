@@ -57,6 +57,7 @@ void Main::doWork()
     image_transport::ImageTransport it(ros_grabber->node_handle_);
     image_transport::Publisher pub = it.advertise("cftld/detection", 1);
     ros::Publisher pub_detect_heads = ros_grabber_depth->node_handle_.advertise<bayes_people_tracker_msgs::PeopleWithHead>("/cftld/people_with_head", 1);
+    ros::Publisher pub_pose = ros_grabber_depth->node_handle_.advertise<geometry_msgs::PoseStamped>("/cftld/debug/pose", 1);
     ros::Publisher pub_marker_array = ros_grabber_depth->node_handle_.advertise<visualization_msgs::MarkerArray>("/cftld/marker_array", 1);
     ROS_INFO(">> Subscribers initialized");
 
@@ -240,7 +241,6 @@ void Main::doWork()
                 geometry_msgs::PoseStamped pose = ros_grabber_depth->getDetectionPose(depthImage, tld->currBB);
 
                 if (pose.header.frame_id != "invalid") {
-
                     bayes_people_tracker_msgs::PeopleWithHead supremePeople;
 
                     supremePeople.header = pose.header;
@@ -252,6 +252,7 @@ void Main::doWork()
                     supremePeople.people.push_back(person);
                     supremePeople.head_positions.push_back(pose.pose.position);
 
+                    pub_pose.publish(pose);
                     pub_detect_heads.publish(supremePeople);
                     ros_grabber_depth->createVisualisation(pose.pose, pub_marker_array);
                 }
