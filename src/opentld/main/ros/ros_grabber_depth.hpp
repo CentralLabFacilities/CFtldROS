@@ -139,7 +139,7 @@ private:
     visualization_msgs::Marker createMarker(int id, int type, int action, geometry_msgs::Pose pose,
             geometry_msgs::Vector3 scale, std_msgs::ColorRGBA color) {
       visualization_msgs::Marker marker;
-      marker.header.frame_id = "base_link";
+      marker.header.frame_id = "map";
       marker.header.stamp = ros::Time::now();
       //marker.header.seq = ++marker_seq;
       marker.ns = "people_tracker";
