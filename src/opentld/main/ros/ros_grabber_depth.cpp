@@ -52,7 +52,7 @@ using namespace cv;
 using namespace std;
 
 ROSGrabberDepth::ROSGrabberDepth(std::string i_scope) : it_(node_handle_) {
-    ROS_INFO(">> initializing ros grabber depth");
+    ROS_DEBUG(">> initializing ros grabber depth");
     image_sub_ = it_.subscribe(i_scope, 1, &ROSGrabberDepth::imageCallback, this);
     info_depth_sub = node_handle_.subscribe("/pepper_robot/camera/depth/camera_info", 1, &ROSGrabberDepth::depthInfoCallback, this);
     listener = new tf::TransformListener();
@@ -113,7 +113,7 @@ int ROSGrabberDepth::getLastFrameNr() {
 }
 
 void ROSGrabberDepth::depthInfoCallback(const sensor_msgs::CameraInfoConstPtr& cameraInfoMsg) {
-    ROS_INFO(">> Entered depth info callback");
+    ROS_DEBUG(">> Entered depth info callback");
     if(!depthConstant_factor_is_set) {
         ROS_INFO(">>> Setting depthConstant_factor");
         depthConstant_factor = cameraInfoMsg->K[4];
@@ -126,11 +126,11 @@ void ROSGrabberDepth::depthInfoCallback(const sensor_msgs::CameraInfoConstPtr& c
     }
 }
 
-geometry_msgs::PoseStamped ROSGrabberDepth::getDetectionPose(const cv::Mat & depthImage, int x, int y, float cx, float cy) {
+geometry_msgs::PoseStamped ROSGrabberDepth::getDetectionPose(const cv::Mat & depthImage, cv::Rect* bb) {
     geometry_msgs::PoseStamped base_link_pose;
     base_link_pose.header.frame_id = "invalid";
 
-    cv::Vec3f center3D = getDepth(depthImage, x, y, cx, cy);
+    cv::Vec3f center3D = getDepth(depthImage, bb);
 
     if (isfinite(center3D.val[0]) && isfinite(center3D.val[1]) && isfinite(center3D.val[2])) {
         geometry_msgs::PoseStamped camera_pose;
@@ -160,10 +160,22 @@ geometry_msgs::PoseStamped ROSGrabberDepth::getDetectionPose(const cv::Mat & dep
 
 }
 
-cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, int x, int y, float cx, float cy) {
+void ROSGrabberDepth::createVisualisation(geometry_msgs::Pose& pose, ros::Publisher &pub) {
+    ROS_DEBUG("Creating markers");
+    visualization_msgs::MarkerArray marker_array;
+    std::vector <visualization_msgs::Marker> human = createHuman(0, pose);
+    marker_array.markers.insert(marker_array.markers.begin(), human.begin(), human.end());
+    pub.publish(marker_array);
+}
+
+cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, cv::Rect* bb) {
+
+    float x = (bb->br().x - bb->tl().x/2)/2 + 0.5f;
+    float y = (bb->br().y - bb->tl().y/2)/2 + 0.5f;
+     
     if(!(x >=0 && x<depthImage.cols && y >=0 && y<depthImage.rows))
 	{
-		ROS_ERROR(">>> Point must be inside the image (x=%d, y=%d), image size=(%d,%d)", x, y, depthImage.cols, depthImage.rows);
+		ROS_ERROR(">>> Point must be inside the image!");
 		return Vec3f(
 				numeric_limits<float>::quiet_NaN(),
 				numeric_limits<float>::quiet_NaN(),
@@ -173,8 +185,8 @@ cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, int x, int y, fl
 	cv::Vec3f pt;
 
 	// Use correct principal point from calibration
-	float center_x = cx; //cameraInfo.K.at(2)
-	float center_y = cy; //cameraInfo.K.at(5)
+	float center_x = float(depthImage.cols/2)-0.5f; //cameraInfo.K.at(2)
+	float center_y = float(depthImage.rows/2)-0.5f; //cameraInfo.K.at(5)
 
 	bool isInMM = depthImage.type() == CV_16UC1; // is in mm?
 
@@ -189,17 +201,33 @@ cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, int x, int y, fl
 
 	if(isInMM) {
 	    // ROS_DEBUG(">>> Image is in Millimeters");
-	    float depth_samples[21];
+	    float depth_samples[13];
 
         // Sample fore depth points to the right, left, top and down
-        for (int i=0; i<5; i++) {
-            depth_samples[i] = (float)depthImage.at<uint16_t>(y,x+i);
-            depth_samples[i+5] = (float)depthImage.at<uint16_t>(y,x-i);
-            depth_samples[i+10] = (float)depthImage.at<uint16_t>(y+i,x);
-            depth_samples[i+15] = (float)depthImage.at<uint16_t>(y-i,x);
+        for (int i=0; i<3; i++) {
+            if (x+i <= bb->br().x) {
+                depth_samples[i] = (float)depthImage.at<uint16_t>(y,x+i);
+            } else {
+                depth_samples[i] = (float)depthImage.at<uint16_t>(y,x);
+            }
+            if (x-i >= bb->tl().x) {
+                depth_samples[i+3] = (float)depthImage.at<uint16_t>(y,x-i);
+            } else {
+                depth_samples[i+3] = (float)depthImage.at<uint16_t>(y,x);
+            }
+            if (y+i <= bb->br().y) {
+                depth_samples[i+6] = (float)depthImage.at<uint16_t>(y+i,x);
+            } else {
+                depth_samples[i+6] = (float)depthImage.at<uint16_t>(y,x);
+            }
+            if (y-i >= bb->tl().y) {
+                depth_samples[i+9] = (float)depthImage.at<uint16_t>(y-i,x);
+            } else {
+                depth_samples[i+9] = (float)depthImage.at<uint16_t>(y,x);
+            }
         }
 
-        depth_samples[20] = (float)depthImage.at<uint16_t>(y, x);
+        depth_samples[12] = (float)depthImage.at<uint16_t>(y, x);
 
         int arr_size = sizeof(depth_samples)/sizeof(float);
         sort(&depth_samples[0], &depth_samples[arr_size]);

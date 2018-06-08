@@ -39,6 +39,9 @@
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 #include <geometry_msgs/PoseStamped.h>
+#include "bayes_people_tracker_msgs/PeopleWithHead.h"
+#include <people_msgs/People.h>
+#include <people_msgs/Person.h>
 
 using namespace tld;
 using namespace cv;
@@ -53,7 +56,8 @@ void Main::doWork()
     ROS_INFO(">> Setting up ros subcribers");
     image_transport::ImageTransport it(ros_grabber->node_handle_);
     image_transport::Publisher pub = it.advertise("cftld/detection", 1);
-    ros::Publisher pose_pub = ros_grabber_depth->node_handle_.advertise<geometry_msgs::PoseStamped>("cftld/pose_stamped", 1);
+    ros::Publisher pub_detect_heads = ros_grabber_depth->node_handle_.advertise<bayes_people_tracker_msgs::PeopleWithHead>("/cftld/people_with_head", 1);
+    ros::Publisher pub_marker_array = ros_grabber_depth->node_handle_.advertise<visualization_msgs::MarkerArray>("/cftld/marker_array", 1);
     ROS_INFO(">> Subscribers initialized");
 
     if (!isRosUsed) {
@@ -233,13 +237,23 @@ void Main::doWork()
                 CvScalar rectangleColor = red;
                 cvRectangle(img, tld->currBB->tl(), tld->currBB->br(), rectangleColor, 2, 8, 0);
 
-                double center_x = (tld->currBB->br().x - tld->currBB->tl().x/2)/2;
-                double center_y = (tld->currBB->br().y - tld->currBB->tl().y/2)/2;
-                geometry_msgs::PoseStamped pose = ros_grabber_depth->getDetectionPose(depthImage, center_x + 0.5f, center_y + 0.5f,
-                                                    float(depthImage.cols/2)-0.5f, float(depthImage.rows/2)-0.5f);
+                geometry_msgs::PoseStamped pose = ros_grabber_depth->getDetectionPose(depthImage, tld->currBB);
 
                 if (pose.header.frame_id != "invalid") {
-                    pose_pub.publish(pose);
+
+                    bayes_people_tracker_msgs::PeopleWithHead supremePeople;
+
+                    supremePeople.header = pose.header;
+
+                    people_msgs::Person person;
+                    person.position = pose.pose.position;
+                    person.reliability = 1.0;
+
+                    supremePeople.people.push_back(person);
+                    supremePeople.head_positions.push_back(pose.pose.position);
+
+                    pub_detect_heads.publish(supremePeople);
+                    ros_grabber_depth->createVisualisation(pose.pose, pub_marker_array);
                 }
             }
 
