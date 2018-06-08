@@ -34,6 +34,7 @@
 
 // ROS
 #include "ros/ros_grabber.hpp"
+#include "ros/ros_grabber_depth.hpp"
 
 enum Retval
 {
@@ -48,7 +49,7 @@ public:
     ImAcq *imAcq;
     tld::Gui *gui;
     ROSGrabber *ros_grabber;
-    ROSGrabber *ros_grabber_depth;
+    ROSGrabberDepth *ros_grabber_depth;
 
     bool showOutput;
     bool showTrajectory;

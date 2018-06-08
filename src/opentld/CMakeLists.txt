@@ -17,6 +17,8 @@ endif(NOT USE_SYSTEM_LIBS)
 add_library(main
     main/ros/ros_grabber.cpp
     main/ros/ros_grabber.hpp
+    main/ros/ros_grabber_depth.cpp
+    main/ros/ros_grabber_depth.hpp
     main/Config.cpp
     main/Gui.cpp
     main/Main.cpp

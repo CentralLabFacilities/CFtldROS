@@ -1,5 +1,4 @@
 /*
-
 Author: Florian Lier [flier AT techfak.uni-bielefeld DOT de]
 
 By downloading, copying, installing or using the software you agree to this license.
@@ -45,60 +44,66 @@ the use of this software, even if advised of the possibility of such damage.
 */
 
 
-// SELF
-#include "ros_grabber.hpp"
+#pragma once
 
-using namespace cv;
-using namespace std;
+// ROS
+#include <ros/ros.h>
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
+#include <image_transport/image_transport.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <sensor_msgs/CameraInfo.h>
 
-ROSGrabber::ROSGrabber(std::string i_scope) : it_(node_handle_) {
-    image_sub_ = it_.subscribe(i_scope, 1, &ROSGrabber::imageCallback, this);
-    frame_nr = -1;
-    pyr = 0;
-    ROS_INFO(">> ros grabber init done");
-    ROS_INFO(">> ros grabber subscribing to %s", i_scope.c_str());
-}
+//TF
+#include <tf/transform_listener.h>
 
-ROSGrabber::~ROSGrabber() { }
+// STD
+#include <mutex>
+#include <string>
+#include <sstream>
+#include <iostream>
+#include <cmath>
 
-void ROSGrabber::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
-    cv_bridge::CvImagePtr cv_ptr;
-    ROS_DEBUG(">> new image");
-    try {
-        cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
-    }
-    catch (cv_bridge::Exception &e) {
-        ROS_ERROR("E >>> CV_BRIDGE exception: %s", e.what());
-        return;
-    }
+// CV
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
-    mtx.lock();
-    frame_time = msg->header.stamp;
-    frame_nr = (int)msg->header.seq;
-    frame_id = msg->header.frame_id;
-    source_frame = cv_ptr->image;
-    if (pyr > 0) {
-        cv::pyrUp(source_frame, output_frame, cv::Size(source_frame.cols*2, source_frame.rows*2));
-    } else {
-        output_frame = source_frame;
-    }
-    mtx.unlock();
-}
+// BOOST
+#include "boost/date_time/posix_time/posix_time.hpp"
 
-void ROSGrabber::getImage(cv::Mat *mat) {
-    mtx.lock();
-    *mat = output_frame;
-    mtx.unlock();
-}
+class ROSGrabberDepth {
 
-void ROSGrabber::setPyr(bool _pyr) {
-    pyr = _pyr;
-}
+public:
+    ROSGrabberDepth(std::string i_scope);
+    ~ROSGrabberDepth();
+    cv::Vec3f getDepth(const cv::Mat & depthImage, int x, int y, float cx, float cy);
+    geometry_msgs::PoseStamped getDetectionPose(const cv::Mat & depthImage, int x, int y, float cx, float cy);
+    void depthInfoCallback(const sensor_msgs::CameraInfoConstPtr& cameraInfoMsg);
+    void imageCallback(const sensor_msgs::ImageConstPtr& msg);
+    void getImage(cv::Mat *mat);
+    void setPyr(bool pyr);
+    ros::Time getTimestamp();
+    ros::NodeHandle node_handle_;
+    std::string frame_id;
+    int getLastFrameNr();
+    int pyr;
+private:
+    int frame_nr;
+    image_transport::ImageTransport it_;
+    image_transport::Subscriber image_sub_;
+    ros::Subscriber info_depth_sub;
+    cv::Mat output_frame;
+    cv::Mat source_frame;
+    ros::Time frame_time;
+    std::recursive_mutex mtx;
 
-ros::Time ROSGrabber::getTimestamp() {
-    return frame_time;
-}
+    //DepthImage stuff
+    float depthConstant_;
+    float depthConstant_factor;
+    float camera_image_rgb_width;
+    float scale_factor_ = 2.0;
+    float camera_image_depth_width;
+    bool depthConstant_factor_is_set = false;
+    tf::TransformListener* listener;
+};
 
-int ROSGrabber::getLastFrameNr() {
-    return frame_nr;
-}
