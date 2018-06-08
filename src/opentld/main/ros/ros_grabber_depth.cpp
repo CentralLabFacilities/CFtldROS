@@ -169,9 +169,9 @@ void ROSGrabberDepth::createVisualisation(geometry_msgs::Pose& pose, ros::Publis
 }
 
 cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, cv::Rect* bb) {
-    float x = (bb->br().x - bb->size().width/2)/2 + 0.5f;
-    float y = (bb->br().y - bb->size().height/2)/2 + 0.5f;
-     
+    double x = (bb->br().x - bb->size().width/2)/2 + 0.5f;
+    double y = (bb->br().y - bb->size().height/2)/2 + 0.5f;
+ 
     if(!(x >=0 && x<depthImage.cols && y >=0 && y<depthImage.rows))
 	{
 		ROS_ERROR(">>> Point must be inside the image!");
@@ -184,6 +184,7 @@ cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, cv::Rect* bb) {
 	cv::Vec3f pt;
 
 	// Use correct principal point from calibration
+    float depthConstant_ = 1.0f/depthConstant_factor;
 	float center_x = float(depthImage.cols/2)-0.5f; //cameraInfo.K.at(2)
 	float center_y = float(depthImage.rows/2)-0.5f; //cameraInfo.K.at(5)
 
@@ -199,7 +200,7 @@ cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, cv::Rect* bb) {
 	bool isValid;
 
 	if(isInMM) {
-	    ROS_INFO(">>> Image is in Millimeters");
+	    // ROS_DEBUG(">>> Image is in Millimeters");
 	    float depth_samples[13];
 
         // Sample fore depth points to the right, left, top and down
@@ -282,7 +283,7 @@ cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, cv::Rect* bb) {
 		pt.val[0] = pt.val[1] = pt.val[2] = bad_point;
 	} else{
 		// Fill in XYZ
-		pt.val[0] = (float(x) - center_x) * depth * constant_x;
+        pt.val[0] = (float(x) - center_x) * depth * constant_x;
 		pt.val[1] = (float(y) - center_y) * depth * constant_y;
 		pt.val[2] = depth*unit_scaling;
 	}
