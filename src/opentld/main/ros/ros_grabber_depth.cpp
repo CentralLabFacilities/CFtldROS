@@ -144,7 +144,7 @@ geometry_msgs::PoseStamped ROSGrabberDepth::getDetectionPose(const cv::Mat & dep
         camera_pose.pose.orientation.z = 0.0;
         camera_pose.pose.orientation.w = 1.0;
 
-        base_link_pose.header.frame_id = "base_link";
+        base_link_pose.header.frame_id = "map";
 
         try{
             ROS_DEBUG("Transforming received position into BASELINK coordinate system.");
