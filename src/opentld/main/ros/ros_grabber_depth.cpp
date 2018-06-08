@@ -199,7 +199,7 @@ cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, cv::Rect* bb) {
 	bool isValid;
 
 	if(isInMM) {
-	    // ROS_DEBUG(">>> Image is in Millimeters");
+	    ROS_INFO(">>> Image is in Millimeters");
 	    float depth_samples[13];
 
         // Sample fore depth points to the right, left, top and down
@@ -243,28 +243,28 @@ cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, cv::Rect* bb) {
         // Sample fore depth points to the right, left, top and down
         for (int i=0; i<3; i++) {
             if (x+i <= bb->br().x) {
-                depth_samples[i] = (float)depthImage.at<uint16_t>(y,x+i);
+                depth_samples[i] = (float)depthImage.at<float>(y,x+i);
             } else {
-                depth_samples[i] = (float)depthImage.at<uint16_t>(y,x);
+                depth_samples[i] = (float)depthImage.at<float>(y,x);
             }
             if (x-i >= bb->tl().x) {
-                depth_samples[i+3] = (float)depthImage.at<uint16_t>(y,x-i);
+                depth_samples[i+3] = (float)depthImage.at<float>(y,x-i);
             } else {
-                depth_samples[i+3] = (float)depthImage.at<uint16_t>(y,x);
+                depth_samples[i+3] = (float)depthImage.at<float>(y,x);
             }
             if (y+i <= bb->br().y) {
-                depth_samples[i+6] = (float)depthImage.at<uint16_t>(y+i,x);
+                depth_samples[i+6] = (float)depthImage.at<float>(y+i,x);
             } else {
-                depth_samples[i+6] = (float)depthImage.at<uint16_t>(y,x);
+                depth_samples[i+6] = (float)depthImage.at<float>(y,x);
             }
             if (y-i >= bb->tl().y) {
-                depth_samples[i+9] = (float)depthImage.at<uint16_t>(y-i,x);
+                depth_samples[i+9] = (float)depthImage.at<float>(y-i,x);
             } else {
-                depth_samples[i+9] = (float)depthImage.at<uint16_t>(y,x);
+                depth_samples[i+9] = (float)depthImage.at<float>(y,x);
             }
         }
 
-        depth_samples[12] = (float)depthImage.at<uint16_t>(y, x);
+        depth_samples[12] = (float)depthImage.at<float>(y, x);
 
         int arr_size = sizeof(depth_samples)/sizeof(float);
         sort(&depth_samples[0], &depth_samples[arr_size]);
