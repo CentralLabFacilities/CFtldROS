@@ -267,7 +267,8 @@ void Main::doWork() {
                 CvScalar blue = CV_RGB(0, 0, 255);
                 CvScalar black = CV_RGB(0, 0, 0);
                 CvScalar white = CV_RGB(255, 255, 255);
-                CvScalar red = CV_RGB(255, 144 30);
+                // TODO: fixme, blue lol.
+                CvScalar red = CV_RGB(255, 144, 30);
 
                 if (tld->currBB != NULL) {
                     CvScalar rectangleColor = red;
