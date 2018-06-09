@@ -50,9 +50,11 @@ using namespace cv;
 bool stop = false;
 
 bool Main::toggleCB(clf_perception_vision_msgs::ToggleCFtldTrackingWithBB::Request& request, clf_perception_vision_msgs::ToggleCFtldTrackingWithBB::Response& response) {
+    ROS_INFO("Received toggle service call");
     toggleMutex.lock();
     if (!isToggeled) {
         if (request.roi.width != 0 && request.roi.height != 0) {
+            ROS_INFO("Tracking is now active");
             initialBB = new int[4];
             initialBB[0] = request.roi.x_offset;
             initialBB[1] = request.roi.y_offset;
@@ -64,7 +66,8 @@ bool Main::toggleCB(clf_perception_vision_msgs::ToggleCFtldTrackingWithBB::Reque
             ROS_WARN("YOUR BOUNDING BOX WAS NOT VALID!");
         }
     } else {
-        isToggeled != isToggeled;
+        ROS_INFO("Deactivated tracking");
+        isToggeled = !isToggeled;
     }
     toggleMutex.unlock();
     return true;
@@ -219,8 +222,7 @@ void Main::doWork() {
                 if (colorImage.channels() == 1)
                     cv::cvtColor(colorImage, colorImage, cv::COLOR_GRAY2BGR);
 
-                if (img == NULL)
-                {
+                if (img == NULL) {
                     printf("current image is NULL, assuming end of input.\n");
                     break;
                 }
