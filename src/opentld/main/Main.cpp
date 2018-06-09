@@ -267,7 +267,7 @@ void Main::doWork() {
                 CvScalar blue = CV_RGB(0, 0, 255);
                 CvScalar black = CV_RGB(0, 0, 0);
                 CvScalar white = CV_RGB(255, 255, 255);
-                CvScalar red = CV_RGB(255, 0, 0);
+                CvScalar red = CV_RGB(255, 144 30);
 
                 if (tld->currBB != NULL) {
                     CvScalar rectangleColor = red;
@@ -293,9 +293,9 @@ void Main::doWork() {
                 }
 
                 CvFont font;
-                cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .5, .5, 0, 2, 8);
+                cvInitFont(&font, CV_FONT_HERSHEY_DUPLEX, .2, .2, 0, 2, 8);
                 // cvRectangle(img, cvPoint(0, 0), cvPoint(img->width, 50), black, CV_FILLED, 8, 0);
-                cvPutText(img, string, cvPoint(25, 25), &font, red);
+                cvPutText(img, string, cvPoint(5, 5), &font, red);
 
                 // Publish every 10th cycle
                 if (last_frame_nr % 10 == 0) {
