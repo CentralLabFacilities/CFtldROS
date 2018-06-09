@@ -35,6 +35,9 @@
 // ROS
 #include "ros/ros_grabber.hpp"
 #include "ros/ros_grabber_depth.hpp"
+#include <ros/service_server.h>
+#include <std_srvs/Empty.h>
+#include <clf_perception_vision_msgs/ToggleCFtldTrackingWithBB.h>
 
 enum Retval
 {
@@ -50,7 +53,9 @@ public:
     tld::Gui *gui;
     ROSGrabber *ros_grabber;
     ROSGrabberDepth *ros_grabber_depth;
-
+    std::mutex  toggleMutex;
+    bool isToggeled;
+    bool newBB;
     bool showOutput;
     bool showTrajectory;
     int trajectoryLength;
@@ -70,6 +75,8 @@ public:
     int seed;
     int last_frame_nr;
 
+    bool toggleCB(clf_perception_vision_msgs::ToggleCFtldTrackingWithBB::Request& request, clf_perception_vision_msgs::ToggleCFtldTrackingWithBB::Response& response);
+
     Main()
     {
         tld = new tld::TLD();
@@ -83,6 +90,8 @@ public:
         trajectoryLength = 0;
 
         isRosUsed = false;
+        isToggeled = false;
+        newBB = false;
 
         selectManually = 0;
 
