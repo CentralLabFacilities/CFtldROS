@@ -267,8 +267,8 @@ void Main::doWork() {
                 CvScalar blue = CV_RGB(0, 0, 255);
                 CvScalar black = CV_RGB(0, 0, 0);
                 CvScalar white = CV_RGB(255, 255, 255);
-                // TODO: fixme, blue lol.
-                CvScalar red = CV_RGB(255, 144, 30);
+                // Fixme, blue lol.
+                CvScalar red = CV_RGB(30, 144, 255);
 
                 if (tld->currBB != NULL) {
                     CvScalar rectangleColor = red;
@@ -294,7 +294,7 @@ void Main::doWork() {
                 }
 
                 CvFont font;
-                cvInitFont(&font, CV_FONT_HERSHEY_DUPLEX, .2, .2, 0, 2, 8);
+                cvInitFont(&font, CV_FONT_HERSHEY_DUPLEX, .3, .3, 0, 1, 8);
                 // cvRectangle(img, cvPoint(0, 0), cvPoint(img->width, 50), black, CV_FILLED, 8, 0);
                 cvPutText(img, string, cvPoint(5, 5), &font, red);
 
