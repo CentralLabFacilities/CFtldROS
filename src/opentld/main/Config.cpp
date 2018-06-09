@@ -47,7 +47,8 @@ namespace tld
         "[-s] if set, user can select initial bounding box\n"
         "[-x] use dsst tracker; otherwise kcf tracker is used"
         "[-t <theta>] threshold for determining positive results\n"
-        "[-r <rostopic>] the ROS input image topic\n"
+        "[-C <rostopic>] the ROS input image topic for color\n"
+        "[-D <rostopic>] the ROS input image topic for depth\n"
         "[-z <lastFrameNumber>] video ends at the frameNumber <lastFrameNumber>.\n"
         "    If <lastFrameNumber> is 0 or the option argument isn't specified means\n"
         "    take all frames.\n"
@@ -85,7 +86,7 @@ namespace tld
         // check cli arguments
         int c;
 
-        while ((c = getopt(argc, argv, "a:b:d:e:fhi:j:m:n:Op:qst:z:x")) != -1)
+        while ((c = getopt(argc, argv, "a:b:C:d:D:e:fhi:j:m:n:Op:qst:z:x")) != -1)
         {
             switch (c)
             {
@@ -170,6 +171,12 @@ namespace tld
             case 'z':
                 m_settings.m_lastFrame = atoi(optarg);
                 m_lastFrameSet = true;
+                break;
+            case 'C':
+                m_settings.color_topic = optarg;
+                break;
+            case 'D':
+                m_settings.depth_topic = optarg;
                 break;
             }
         }
@@ -500,6 +507,10 @@ namespace tld
 
         detectorCascade->nnClassifier->thetaFP = m_settings.m_thetaN;
         std::cout << "m_settings.m_thetaN: " << m_settings.m_thetaN << std::endl;
+
+        std::cout << "ros color setting: " << m_settings.color_topic << std::endl;
+
+        std::cout << "ros depth setting: " << m_settings.depth_topic << std::endl;
 
         return SUCCESS;
     }

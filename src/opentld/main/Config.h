@@ -65,10 +65,11 @@ namespace tld
          * @return SUCCESS
          */
         int configure(Main *main);
+        Settings m_settings; //!< adjusted settings
     private:
         libconfig::Config m_cfg; //!< libconfig++
         std::string m_configPath; //!< path to the config file
-        Settings m_settings; //!< adjusted settings
+        // Settings m_settings; //!< adjusted settings
         ///@{
         /**
          * Flags if parameters were set by cli-arguments.

@@ -77,6 +77,8 @@ namespace tld
         std::string m_printResults; //!< path to the file were the results should be printed; NULL -> results will not be printed
         std::string m_printTiming; //!< path to the file were the timings should be printed; NULL -> results will not be printed
         std::vector<int> m_initialBoundingBox; //!< Initial Bounding Box can be specified here
+        std::string depth_topic;
+        std::string color_topic;
     };
 }
 
