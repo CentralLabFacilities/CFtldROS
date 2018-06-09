@@ -350,7 +350,7 @@ void Main::doWork() {
                 }
             }
         } else {
-          std::this_thread::sleep_for(std::chrono::milliseconds(20));
+          std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
 
         if (reuseFrameOnce) {
