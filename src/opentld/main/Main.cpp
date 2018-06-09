@@ -294,9 +294,9 @@ void Main::doWork() {
                 }
 
                 CvFont font;
-                cvInitFont(&font, CV_FONT_HERSHEY_DUPLEX, .6, .6, 0, 1, 8);
+                cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .4, 0, 1, 8);
                 // cvRectangle(img, cvPoint(0, 0), cvPoint(img->width, 50), black, CV_FILLED, 8, 0);
-                cvPutText(img, string, cvPoint(5, 5), &font, red);
+                cvPutText(img, string, cvPoint(15, 15), &font, red);
 
                 // Publish every 10th cycle
                 if (last_frame_nr % 10 == 0) {
