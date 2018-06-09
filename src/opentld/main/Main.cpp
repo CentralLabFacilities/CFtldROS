@@ -52,7 +52,7 @@ bool stop = false;
 bool Main::toggleCB(clf_perception_vision_msgs::ToggleCFtldTrackingWithBB::Request& request, clf_perception_vision_msgs::ToggleCFtldTrackingWithBB::Response& response) {
     toggleMutex.lock();
     if (!isToggeled) {
-        if (request.roi.width != 0 || request.roi.height != 0) {
+        if (request.roi.width != 0 && request.roi.height != 0) {
             initialBB = new int[4];
             initialBB[0] = request.roi.x_offset;
             initialBB[1] = request.roi.y_offset;
@@ -63,6 +63,8 @@ bool Main::toggleCB(clf_perception_vision_msgs::ToggleCFtldTrackingWithBB::Reque
         } else {
             ROS_WARN("YOUR BOUNDING BOX WAS NOT VALID!");
         }
+    } else {
+        isToggeled != isToggeled;
     }
     toggleMutex.unlock();
     return true;
