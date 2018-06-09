@@ -181,14 +181,14 @@ void Main::doWork() {
         // Make sure we only run with image framerate to save CPU cycles
         if(isRosUsed) {
             if(!(ros_grabber->getLastFrameNr() != last_frame_nr)) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
                 last_frame_nr = ros_grabber->getLastFrameNr();
                 ROS_DEBUG(">>> Skipping computation step ...");
                 continue;
             }
         }
 
-        if (isToggeled) {
+        if(isToggeled) {
 
             if (newBB) {
                 ROS_INFO("Passing new bounding box to tld");
@@ -347,6 +347,8 @@ void Main::doWork() {
                     cvSaveImage(fileName, img);
                 }
             }
+        } else {
+          std::this_thread::sleep_for(std::chrono::milliseconds(20));
         }
 
         if (reuseFrameOnce) {
