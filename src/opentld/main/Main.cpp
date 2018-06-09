@@ -261,7 +261,7 @@ void Main::doWork() {
                     strcpy(learningString, "Learning");
                 }
 
-                sprintf(string, "#%d, process fps: %.2f, #numwindows:%d, %s", imAcq->currentFrame - 1,
+                sprintf(string, "#%d, fps: %.2f, #numwin:%d, %s", imAcq->currentFrame - 1,
                         fps, tld->detectorCascade->numWindows, learningString);
                 CvScalar yellow = CV_RGB(255, 255, 0);
                 CvScalar blue = CV_RGB(0, 0, 255);
