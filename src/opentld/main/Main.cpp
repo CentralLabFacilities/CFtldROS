@@ -294,7 +294,7 @@ void Main::doWork() {
                 }
 
                 CvFont font;
-                cvInitFont(&font, CV_FONT_HERSHEY_DUPLEX, .3, .3, 0, 1, 8);
+                cvInitFont(&font, CV_FONT_HERSHEY_DUPLEX, .6, .6, 0, 1, 8);
                 // cvRectangle(img, cvPoint(0, 0), cvPoint(img->width, 50), black, CV_FILLED, 8, 0);
                 cvPutText(img, string, cvPoint(5, 5), &font, red);
 
