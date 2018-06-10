@@ -52,22 +52,19 @@ bool stop = false;
 bool Main::toggleCB(clf_perception_vision_msgs::ToggleCFtldTrackingWithBB::Request& request, clf_perception_vision_msgs::ToggleCFtldTrackingWithBB::Response& response) {
     ROS_INFO("Received toggle service call");
     toggleMutex.lock();
-    if (!isToggeled) {
-        if (request.roi.width != 0 && request.roi.height != 0) {
-            ROS_INFO("Tracking is now active");
-            initialBB = new int[4];
-            initialBB[0] = request.roi.x_offset/2;
-            initialBB[1] = request.roi.y_offset/2;
-            initialBB[2] = request.roi.width/2;
-            initialBB[3] = request.roi.height/2;
-            newBB = true;
-            isToggeled = !isToggeled;
-        } else {
-            ROS_WARN("YOUR BOUNDING BOX WAS NOT VALID!");
-        }
+    if (request.roi.width != 0 && request.roi.height != 0) {
+        ROS_INFO("Tracking is now active");
+        initialBB = new int[4];
+        initialBB[0] = request.roi.x_offset/2;
+        initialBB[1] = request.roi.y_offset/2;
+        initialBB[2] = request.roi.width/2;
+        initialBB[3] = request.roi.height/2;
+        newBB = true;
+        isToggeled = true;
+        ROS_DEBUG("Bounding Box x: %d, y: %d, w: %d, h: %d received", initialBB[0], initialBB[1], initialBB[2], initialBB[3]);
     } else {
-        ROS_INFO("Deactivated tracking");
-        isToggeled = !isToggeled;
+        ROS_WARN("Deactivated tracking (invalid BB)!");
+        isToggeled = false;
     }
     toggleMutex.unlock();
     return true;
