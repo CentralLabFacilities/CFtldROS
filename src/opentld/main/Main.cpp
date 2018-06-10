@@ -292,7 +292,6 @@ void Main::doWork() {
                         supremePeople.header = pose.header;
 
                         people_msgs::Person person;
-                        person.name = "IBims1Person";
                         person.position = pose.pose.position;
                         person.reliability = 1.0;
 
