@@ -191,6 +191,19 @@ void Main::doWork() {
         if(isToggeled) {
 
             if (newBB) {
+
+                if (!isRosUsed) {
+                    cvReleaseImage(&img);
+                    img = imAcqGetImg(imAcq);
+                    colorImage = cvarrToMat(img, true);
+                } else {
+                    ros_grabber->getImage(&colorImage);
+                    ros_grabber_depth->getImage(&depthImage);
+                    cv::resize(colorImage, colorImage, cv::Size(), 0.50, 0.50);
+                    img = new IplImage(colorImage);
+                    last_frame_nr = ros_grabber->getLastFrameNr();
+                }
+
                 ROS_INFO("Passing new bounding box to tld");
                 Rect bb = tldArrayToRect(initialBB);
                 tic = static_cast<double>(getTickCount());
