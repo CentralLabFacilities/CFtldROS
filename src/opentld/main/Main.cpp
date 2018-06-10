@@ -87,7 +87,7 @@ void Main::doWork() {
     ROS_INFO(">>> Setting up ros subcribers");
     image_transport::ImageTransport it(ros_grabber->node_handle_);
     image_transport::Publisher pub = it.advertise("cftld/detection", 1);
-    ros::Publisher pub_detect_heads = ros_grabber_depth->node_handle_.advertise<bayes_people_tracker_msgs::PeopleWithHead>("/cftld/people_with_head", 1);
+    ros::Publisher pub_detect_heads = ros_grabber_depth->node_handle_.advertise<bayes_people_tracker_msgs::PeopleWithHead>("/people_tracker/people_with_head", 1);
     ros::Publisher pub_marker_array = ros_grabber_depth->node_handle_.advertise<visualization_msgs::MarkerArray>("/cftld/marker_array", 1);
     ROS_INFO(">>> Subscribers initialized");
 
@@ -292,6 +292,7 @@ void Main::doWork() {
                         supremePeople.header = pose.header;
 
                         people_msgs::Person person;
+                        person.name = "IBims1Person";
                         person.position = pose.pose.position;
                         person.reliability = 1.0;
 
