@@ -286,9 +286,8 @@ void Main::doWork() {
 
                     geometry_msgs::PoseStamped pose = ros_grabber_depth->getDetectionPose(depthImage, tld->currBB);
 
+                    bayes_people_tracker_msgs::PeopleWithHead supremePeople;
                     if (pose.header.frame_id != "invalid") {
-                        bayes_people_tracker_msgs::PeopleWithHead supremePeople;
-
                         supremePeople.header = pose.header;
 
                         people_msgs::Person person;
@@ -298,9 +297,9 @@ void Main::doWork() {
                         supremePeople.people.push_back(person);
                         supremePeople.head_positions.push_back(pose.pose.position);
 
-                        pub_detect_heads.publish(supremePeople);
                         ros_grabber_depth->createVisualisation(pose.pose, pub_marker_array);
                     }
+                    pub_detect_heads.publish(supremePeople);
                 }
 
                 CvFont font;
