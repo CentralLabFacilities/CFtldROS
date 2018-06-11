@@ -363,7 +363,7 @@ void Main::doWork() {
               std::this_thread::sleep_for(std::chrono::milliseconds(20));
             }
 
-            toc_global = = static_cast<double>(getTickCount()) - tic_global;
+            toc_global = static_cast<double>(getTickCount()) - tic_global;
             float fps_global = static_cast<float>(getTickFrequency()) / toc_global;
             ROS_DEBUG("FPS: %f", fps_global)
 
