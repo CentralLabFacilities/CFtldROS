@@ -320,8 +320,8 @@ void Main::doWork() {
                     cvPutText(img, string, cvPoint(15, 15), &font, red);
                     pubFrameCount++;;
 
-                    // Publish every 10th cycle
-                    if (last_frame_nr % 10 == 0) {
+                    // Publish every 3th cycle
+                    if (last_frame_nr % 3 == 0) {
                         ROS_DEBUG("\t\tPublishing image with frame nr: %d", last_frame_nr);
                         sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", cvarrToMat(img, false)).toImageMsg();
                         pub.publish(msg);
