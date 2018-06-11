@@ -115,8 +115,8 @@ void ROSGrabberDepth::depthInfoCallback(const sensor_msgs::CameraInfoConstPtr& c
     if(!depthConstant_factor_is_set) {
         ROS_DEBUG(">>> Setting depthConstant_factor");
         depthConstant_factor = cameraInfoMsg->K[4];
-        camera_image_rgb_width = cameraInfoMsg->width; //Depth and rgb will be halved afterwards so this is okay
-        camera_image_depth_width = cameraInfoMsg->width/2;
+        camera_image_rgb_width = cameraInfoMsg->width;
+        camera_image_depth_width = cameraInfoMsg->width;
         depthConstant_factor_is_set = true;
     } else {
       // Unsubscribe, we only need that once.
@@ -146,7 +146,7 @@ geometry_msgs::PoseStamped ROSGrabberDepth::getDetectionPose(const cv::Mat & dep
 
         try{
             //ROS_DEBUG(">>> Transforming received position into MAP coordinate system.");
-            listener->waitForTransform(camera_pose.header.frame_id, base_link_pose.header.frame_id, camera_pose.header.stamp, ros::Duration(3.0));
+            listener->waitForTransform(camera_pose.header.frame_id, base_link_pose.header.frame_id, camera_pose.header.stamp, ros::Duration(5.0));
             listener->transformPose(base_link_pose.header.frame_id, ros::Time(0), camera_pose, camera_pose.header.frame_id, base_link_pose);
         } catch(tf::TransformException ex) {
             ROS_ERROR(">>> Failed transform: %s", ex.what());
@@ -167,6 +167,7 @@ void ROSGrabberDepth::createVisualisation(geometry_msgs::Pose& pose, ros::Publis
 }
 
 cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, cv::Rect* bb) {
+
     double x = (bb->br().x - bb->size().width/2) + 0.5f;
     double y = (bb->br().y - bb->size().height/2) + 0.5f;
  
@@ -183,8 +184,8 @@ cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, cv::Rect* bb) {
 
 	// Use correct principal point from calibration
     float depthConstant_ = 1.0f/depthConstant_factor;
-	float center_x = float(depthImage.cols/2)*2-0.5f; //cameraInfo.K.at(2)
-	float center_y = float(depthImage.rows/2)*2-0.5f; //cameraInfo.K.at(5)
+	float center_x = float(depthImage.cols/2)-0.5f; //cameraInfo.K.at(2)
+	float center_y = float(depthImage.rows/2)-0.5f; //cameraInfo.K.at(5)
 
 	bool isInMM = depthImage.type() == CV_16UC1; // is in mm?
 
