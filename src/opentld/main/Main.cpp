@@ -232,8 +232,6 @@ void Main::doWork() {
 
                 ROS_DEBUG("\tProcessing image with frame nr: %d", ros_grabber->getLastFrameNr());
 
-	            tic_global = static_cast<double>(getTickCount());
-
                 if (!reuseFrameOnce && (!paused || step)) {
 
                     if (!isRosUsed) {
