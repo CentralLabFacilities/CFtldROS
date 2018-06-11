@@ -13,9 +13,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 
 project(cf_tld_ros)
 
-
-# SET(DEFAULT_CXX_FLAGS "" CACHE STRING "-O2 -march=native -Wno-deprecated-declarations")
-# SET(CMAKE_CXX_FLAGS "${DEFAULT_CXX_FLAGS} ${CMAKE_CXX_FLAGS} -std=gnu++11 -Wno-deprecated-declarations")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 -Wno-deprecated-declarations")
 SET(OpenCV_MIN_VERSION "3.3.1")
 SET(ROS_VERSION "kinetic")
 SET(ROS_BUILD_TYPE Release)
