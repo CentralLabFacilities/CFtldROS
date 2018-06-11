@@ -167,8 +167,8 @@ void ROSGrabberDepth::createVisualisation(geometry_msgs::Pose& pose, ros::Publis
 }
 
 cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, cv::Rect* bb) {
-    double x = (bb->br().x - bb->size().width/2) + 0.5f;
-    double y = (bb->br().y - bb->size().height/2) + 0.5f;
+    double x = (bb->br().x - bb->size().width/2)*2 + 0.5f;
+    double y = (bb->br().y - bb->size().height/2)*2 + 0.5f;
  
     if(!(x >=0 && x<depthImage.cols && y >=0 && y<depthImage.rows))
 	{
@@ -183,8 +183,8 @@ cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, cv::Rect* bb) {
 
 	// Use correct principal point from calibration
     float depthConstant_ = 1.0f/depthConstant_factor;
-	float center_x = float(depthImage.cols/2)-0.5f; //cameraInfo.K.at(2)
-	float center_y = float(depthImage.rows/2)-0.5f; //cameraInfo.K.at(5)
+	float center_x = float(depthImage.cols/2)*2-0.5f; //cameraInfo.K.at(2)
+	float center_y = float(depthImage.rows/2)*2-0.5f; //cameraInfo.K.at(5)
 
 	bool isInMM = depthImage.type() == CV_16UC1; // is in mm?
 

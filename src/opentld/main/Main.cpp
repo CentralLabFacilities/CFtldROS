@@ -55,10 +55,10 @@ bool Main::toggleCB(clf_perception_vision_msgs::ToggleCFtldTrackingWithBB::Reque
     if (request.roi.width != 0 && request.roi.height != 0) {
         ROS_INFO("Tracking is now active");
         initialBB = new int[4];
-        initialBB[0] = request.roi.x_offset/2;
-        initialBB[1] = request.roi.y_offset/2;
-        initialBB[2] = request.roi.width/2;
-        initialBB[3] = request.roi.height/2;
+        initialBB[0] = request.roi.x_offset/4;
+        initialBB[1] = request.roi.y_offset/4;
+        initialBB[2] = request.roi.width/4;
+        initialBB[3] = request.roi.height/4;
         newBB = true;
         isToggeled = true;
         ROS_DEBUG("Bounding Box x: %d, y: %d, w: %d, h: %d received", initialBB[0], initialBB[1], initialBB[2], initialBB[3]);
