@@ -173,6 +173,9 @@ void Main::doWork() {
         reuseFrameOnce = true;
     }
 
+    CvFont font;
+    cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .4, 0, 1, 8);
+
     // imAcqHasMoreFrames(imAcq)
     while (stop == false) {
         // Loop spinner
@@ -204,7 +207,7 @@ void Main::doWork() {
                     last_frame_nr = ros_grabber->getLastFrameNr();
                 }
 
-                ROS_INFO("Passing new bounding box to tld");
+                ROS_INFO("---> Passing new bounding box to tld");
                 Rect bb = tldArrayToRect(initialBB);
                 tic = static_cast<double>(getTickCount());
                 tld->selectObject(colorImage, &bb);
@@ -263,6 +266,7 @@ void Main::doWork() {
                 }
 
                 if (showOutput || saveDir != NULL || isRosUsed) {
+
                     char string[128];
                     char learningString[10] = "";
 
@@ -287,28 +291,19 @@ void Main::doWork() {
                     if (tld->currBB != NULL) {
                         CvScalar rectangleColor = red;
                         cvRectangle(img, tld->currBB->tl(), tld->currBB->br(), rectangleColor, 2, 8, 0);
-
                         geometry_msgs::PoseStamped pose = ros_grabber_depth->getDetectionPose(depthImage, tld->currBB);
-
                         if (pose.header.frame_id != "invalid") {
                             supremePeople.header = pose.header;
-
                             people_msgs::Person person;
                             person.position = pose.pose.position;
                             person.reliability = 1.0;
-
                             supremePeople.people.push_back(person);
                             supremePeople.head_positions.push_back(pose.pose.position);
-
                             ros_grabber_depth->createVisualisation(pose.pose, pub_marker_array);
                         }
                     }
 
                     pub_detect_heads.publish(supremePeople);
-
-                    CvFont font;
-                    cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .4, 0, 1, 8);
-                    // cvRectangle(img, cvPoint(0, 0), cvPoint(img->width, 50), black, CV_FILLED, 8, 0);
                     cvPutText(img, string, cvPoint(15, 15), &font, red);
 
                     // Publish every 10th cycle
