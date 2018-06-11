@@ -365,7 +365,7 @@ void Main::doWork() {
 
             toc_global = static_cast<double>(getTickCount()) - tic_global;
             float fps_global = static_cast<float>(getTickFrequency()) / toc_global;
-            ROS_DEBUG("FPS: %f", fps_global)
+            ROS_DEBUG("FPS: %f", fps_global);
 
 	    } // is toggle
 
