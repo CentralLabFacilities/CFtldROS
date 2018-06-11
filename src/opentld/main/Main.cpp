@@ -241,7 +241,7 @@ void Main::doWork() {
                     } else {
                         ros_grabber->getImage(&colorImage);
                         ros_grabber_depth->getImage(&depthImage);
-                        cv::resize(colorImage, colorImage, cv::Size(), 0.50, 0.50);
+                        cv::resize(colorImage, colorImage, cv::Size(160, 120));
                         img = new IplImage(colorImage);
                         last_frame_nr = ros_grabber->getLastFrameNr();
                     }
