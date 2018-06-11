@@ -79,8 +79,8 @@ namespace tld
             }
         }
 
-        std::cout << "\n\n\n-----------CF_TLD---------------\n";
-        std::cout << "---------- " << tracker->getId() << " --------------" << "\n\n\n";
+        // std::cout << "\n\n\n-----------CF_TLD---------------\n";
+        // std::cout << "---------- " << tracker->getId() << " --------------" << "\n\n\n";
     }
 
     TLD::~TLD()

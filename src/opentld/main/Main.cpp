@@ -162,13 +162,13 @@ void Main::doWork() {
     bool step = false;
     double tic = 0;
     double toc = 0;
+    double tic_global = 0;
+    double toc_global = 0;
 
     if (initialBB != NULL) {
         Rect bb = tldArrayToRect(initialBB);
         printf("Starting at %d %d %d %d\n", bb.x, bb.y, bb.width, bb.height);
-        tic = static_cast<double>(getTickCount());
         tld->selectObject(colorImage, &bb);
-        toc = static_cast<double>(getTickCount()) - tic;
         skipProcessingOnce = true;
         reuseFrameOnce = true;
     }
@@ -177,18 +177,18 @@ void Main::doWork() {
     while (stop == false) {
         // Loop spinner
         ros::spinOnce();
-
         // Make sure we only run with image framerate to save CPU cycles
         if(isRosUsed) {
             if(!(ros_grabber->getLastFrameNr() != last_frame_nr)) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(5));
                 last_frame_nr = ros_grabber->getLastFrameNr();
-                ROS_DEBUG(">>> Skipping computation step ...");
+                // ROS_DEBUG(">>> Skipping computation step ...");
                 continue;
             }
         }
-
         if(isToggeled) {
+
+            tic_global = static_cast<double>(getTickCount());
 
             if (newBB) {
 
@@ -215,156 +215,164 @@ void Main::doWork() {
                 newBB = false;
             }
 
-	    if (ros_grabber->getLastFrameNr() % 2 == 0) { 
+	        if (ros_grabber->getLastFrameNr() % 2 == 0) {
 
-		    if (!reuseFrameOnce && (!paused || step)) {
+                if (!reuseFrameOnce && (!paused || step)) {
 
-		        if (!isRosUsed) {
-		            cvReleaseImage(&img);
-		            img = imAcqGetImg(imAcq);
-		            colorImage = cvarrToMat(img, true);
-		        } else {
-		            ros_grabber->getImage(&colorImage);
-		            ros_grabber_depth->getImage(&depthImage);
-		            cv::resize(colorImage, colorImage, cv::Size(), 0.50, 0.50);
-		            img = new IplImage(colorImage);
-		            last_frame_nr = ros_grabber->getLastFrameNr();
+                    if (!isRosUsed) {
+                        cvReleaseImage(&img);
+                        img = imAcqGetImg(imAcq);
+                        colorImage = cvarrToMat(img, true);
+                    } else {
+                        ros_grabber->getImage(&colorImage);
+                        ros_grabber_depth->getImage(&depthImage);
+                        cv::resize(colorImage, colorImage, cv::Size(), 0.50, 0.50);
+                        img = new IplImage(colorImage);
+                        last_frame_nr = ros_grabber->getLastFrameNr();
+                    }
+
+                    if (colorImage.channels() == 1)
+                        cv::cvtColor(colorImage, colorImage, cv::COLOR_GRAY2BGR);
+
+                    if (img == NULL) {
+                        printf("current image is NULL, assuming end of input.\n");
+                        break;
+                    }
 		        }
 
-		        if (colorImage.channels() == 1)
-		            cv::cvtColor(colorImage, colorImage, cv::COLOR_GRAY2BGR);
+                if (!skipProcessingOnce && (!paused || step)) {
+                    tic = static_cast<double>(getTickCount());
+                    tld->processImage(colorImage);
+                    toc = static_cast<double>(getTickCount()) - tic;
+                }
+                else {
+                    skipProcessingOnce = false;
+                }
 
-		        if (img == NULL) {
-		            printf("current image is NULL, assuming end of input.\n");
-		            break;
+                float fps = static_cast<float>(getTickFrequency()) / toc;
+
+                if (printResults != NULL) {
+                    if (tld->currBB != NULL) {
+                        fprintf(resultsFile, "%d, %.2d, %.2d, %.2d, %.2d, %f, %f\n", imAcq->currentFrame - 1,
+                            tld->currBB->x, tld->currBB->y, tld->currBB->width, tld->currBB->height, tld->currConf,
+                            fps);
+                    }
+                    else {
+                        fprintf(resultsFile, "%d, NaN, NaN, NaN, NaN, NaN, %f\n", imAcq->currentFrame - 1, fps);
+                    }
+                }
+
+                if (showOutput || saveDir != NULL || isRosUsed) {
+                    char string[128];
+                    char learningString[10] = "";
+
+                    if (paused && step)
+                        step = false;
+
+                    if (tld->learning) {
+                        strcpy(learningString, "Learning");
+                    }
+
+                    sprintf(string, "#%d, fps: %.2f, #numwin:%d, %s", imAcq->currentFrame - 1,
+                            fps, tld->detectorCascade->numWindows, learningString);
+                    CvScalar yellow = CV_RGB(255, 255, 0);
+                    CvScalar blue = CV_RGB(0, 0, 255);
+                    CvScalar black = CV_RGB(0, 0, 0);
+                    CvScalar white = CV_RGB(255, 255, 255);
+                    // Fixme, blue lol.
+                    CvScalar red = CV_RGB(30, 144, 255);
+
+                    bayes_people_tracker_msgs::PeopleWithHead supremePeople;
+
+                    if (tld->currBB != NULL) {
+                        CvScalar rectangleColor = red;
+                        cvRectangle(img, tld->currBB->tl(), tld->currBB->br(), rectangleColor, 2, 8, 0);
+
+                        geometry_msgs::PoseStamped pose = ros_grabber_depth->getDetectionPose(depthImage, tld->currBB);
+
+                        if (pose.header.frame_id != "invalid") {
+                            supremePeople.header = pose.header;
+
+                            people_msgs::Person person;
+                            person.position = pose.pose.position;
+                            person.reliability = 1.0;
+
+                            supremePeople.people.push_back(person);
+                            supremePeople.head_positions.push_back(pose.pose.position);
+
+                            ros_grabber_depth->createVisualisation(pose.pose, pub_marker_array);
+                        }
+                    }
+
+                    pub_detect_heads.publish(supremePeople);
+
+                    CvFont font;
+                    cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .4, 0, 1, 8);
+                    // cvRectangle(img, cvPoint(0, 0), cvPoint(img->width, 50), black, CV_FILLED, 8, 0);
+                    cvPutText(img, string, cvPoint(15, 15), &font, red);
+
+                    // Publish every 10th cycle
+                    if (last_frame_nr % 10 == 0) {
+                        sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", cvarrToMat(img, false)).toImageMsg();
+                        pub.publish(msg);
+                    }
+
+                    if (showOutput) {
+                        gui->showImage(img);
+                        char key = gui->getKey();
+
+                        if (key == 'q')
+                            break;
+
+                        if (key == 'p')
+                            paused = !paused;
+
+                        if (paused && key == 's')
+                            step = true;
+
+                        if (key == 'c') {
+                            //clear everything
+                            tld->release();
+                        }
+
+                        if (key == 'l') {
+                            tld->learningEnabled = !tld->learningEnabled;
+                            printf("LearningEnabled: %d\n", tld->learningEnabled);
+                        }
+
+                        if (key == 'a') {
+                            tld->alternating = !tld->alternating;
+                            printf("alternating: %d\n", tld->alternating);
+                        }
+
+                        if (key == 'r') {
+                            CvRect box;
+
+                            if (getBBFromUser(img, box, gui) == PROGRAM_EXIT) {
+                                break;
+                            }
+
+                            Rect r = Rect(box);
+                            tld->selectObject(colorImage, &r);
+                        }
+                    }
+
+                    if (saveDir != NULL) {
+                        char fileName[256];
+                        sprintf(fileName, "%s/%.5d.png", saveDir, imAcq->currentFrame - 1);
+                        cvSaveImage(fileName, img);
+                    }
 		        }
-		    }
+            // frame % 2 == 0
+            } else {
+              std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            }
 
-		    if (!skipProcessingOnce && (!paused || step)) {
-		        tic = static_cast<double>(getTickCount());
-		        tld->processImage(colorImage);
-		        toc = static_cast<double>(getTickCount()) - tic;
-		    }
-		    else {
-		        skipProcessingOnce = false;
-		    }
+            toc_global = = static_cast<double>(getTickCount()) - tic_global;
+            float fps_global = static_cast<float>(getTickFrequency()) / toc_global;
+            ROS_DEBUG("FPS: %f", fps_global)
 
-		    float fps = static_cast<float>(getTickFrequency()) / toc;
-
-		    if (printResults != NULL) {
-		        if (tld->currBB != NULL) {
-		            fprintf(resultsFile, "%d, %.2d, %.2d, %.2d, %.2d, %f, %f\n", imAcq->currentFrame - 1,
-		                tld->currBB->x, tld->currBB->y, tld->currBB->width, tld->currBB->height, tld->currConf,
-		                fps);
-		        }
-		        else {
-		            fprintf(resultsFile, "%d, NaN, NaN, NaN, NaN, NaN, %f\n", imAcq->currentFrame - 1, fps);
-		        }
-		    }
-
-		    if (showOutput || saveDir != NULL || isRosUsed) {
-		        char string[128];
-		        char learningString[10] = "";
-
-		        if (paused && step)
-		            step = false;
-
-		        if (tld->learning) {
-		            strcpy(learningString, "Learning");
-		        }
-
-		        sprintf(string, "#%d, fps: %.2f, #numwin:%d, %s", imAcq->currentFrame - 1,
-		                fps, tld->detectorCascade->numWindows, learningString);
-		        CvScalar yellow = CV_RGB(255, 255, 0);
-		        CvScalar blue = CV_RGB(0, 0, 255);
-		        CvScalar black = CV_RGB(0, 0, 0);
-		        CvScalar white = CV_RGB(255, 255, 255);
-		        // Fixme, blue lol.
-		        CvScalar red = CV_RGB(30, 144, 255);
-
-		        if (tld->currBB != NULL) {
-		            CvScalar rectangleColor = red;
-		            cvRectangle(img, tld->currBB->tl(), tld->currBB->br(), rectangleColor, 2, 8, 0);
-
-		            geometry_msgs::PoseStamped pose = ros_grabber_depth->getDetectionPose(depthImage, tld->currBB);
-
-		            bayes_people_tracker_msgs::PeopleWithHead supremePeople;
-		            if (pose.header.frame_id != "invalid") {
-		                supremePeople.header = pose.header;
-
-		                people_msgs::Person person;
-		                person.position = pose.pose.position;
-		                person.reliability = 1.0;
-
-		                supremePeople.people.push_back(person);
-		                supremePeople.head_positions.push_back(pose.pose.position);
-
-		                ros_grabber_depth->createVisualisation(pose.pose, pub_marker_array);
-		            }
-		            pub_detect_heads.publish(supremePeople);
-		        }
-
-		        CvFont font;
-		        cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .4, 0, 1, 8);
-		        // cvRectangle(img, cvPoint(0, 0), cvPoint(img->width, 50), black, CV_FILLED, 8, 0);
-		        cvPutText(img, string, cvPoint(15, 15), &font, red);
-
-		        // Publish every 10th cycle
-		        if (last_frame_nr % 10 == 0) {
-		            sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", cvarrToMat(img, false)).toImageMsg();
-		            pub.publish(msg);
-		        }
-
-		        if (showOutput) {
-		            gui->showImage(img);
-		            char key = gui->getKey();
-
-		            if (key == 'q')
-		                break;
-
-		            if (key == 'p')
-		                paused = !paused;
-
-		            if (paused && key == 's')
-		                step = true;
-
-		            if (key == 'c') {
-		                //clear everything
-		                tld->release();
-		            }
-
-		            if (key == 'l') {
-		                tld->learningEnabled = !tld->learningEnabled;
-		                printf("LearningEnabled: %d\n", tld->learningEnabled);
-		            }
-
-		            if (key == 'a') {
-		                tld->alternating = !tld->alternating;
-		                printf("alternating: %d\n", tld->alternating);
-		            }
-
-		            if (key == 'r') {
-		                CvRect box;
-
-		                if (getBBFromUser(img, box, gui) == PROGRAM_EXIT) {
-		                    break;
-		                }
-
-		                Rect r = Rect(box);
-		                tld->selectObject(colorImage, &r);
-		            }
-		        }
-
-		        if (saveDir != NULL) {
-		            char fileName[256];
-		            sprintf(fileName, "%s/%.5d.png", saveDir, imAcq->currentFrame - 1);
-		            cvSaveImage(fileName, img);
-		        }
-		    }
-		} else {
-		  std::this_thread::sleep_for(std::chrono::milliseconds(50));
-		}
-	}
+	    } // is toggle
 
         if (reuseFrameOnce) {
             reuseFrameOnce = false;
