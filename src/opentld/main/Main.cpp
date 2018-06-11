@@ -307,6 +307,7 @@ void Main::doWork() {
                         if (pose.header.frame_id != "invalid") {
                             supremePeople.header = pose.header;
                             people_msgs::Person person;
+                            person.name = "trackedPerson";
                             person.position = pose.pose.position;
                             person.reliability = 1.0;
                             supremePeople.people.push_back(person);
