@@ -191,8 +191,6 @@ void Main::doWork() {
         }
         if(isToggeled) {
 
-            tic_global = static_cast<double>(getTickCount());
-
             if (newBB) {
 
                 if (!isRosUsed) {
@@ -219,6 +217,8 @@ void Main::doWork() {
             }
 
 	        if (ros_grabber->getLastFrameNr() % 2 == 0) {
+
+	            tic_global = static_cast<double>(getTickCount());
 
                 if (!reuseFrameOnce && (!paused || step)) {
 
@@ -358,15 +358,14 @@ void Main::doWork() {
                         cvSaveImage(fileName, img);
                     }
 		        }
-            // frame % 2 == 0
-            } else {
+
+                toc_global = static_cast<double>(getTickCount()) - tic_global;
+                float fps_global = static_cast<float>(getTickFrequency()) / toc_global;
+                ROS_DEBUG("FPS (modulo frame): %f", fps_global);
+
+            } else { // frame % 2 == 0
               std::this_thread::sleep_for(std::chrono::milliseconds(20));
             }
-
-            toc_global = static_cast<double>(getTickCount()) - tic_global;
-            float fps_global = static_cast<float>(getTickFrequency()) / toc_global;
-            ROS_DEBUG("FPS: %f", fps_global);
-
 	    } // is toggle
 
 	    std::this_thread::sleep_for(std::chrono::milliseconds(20));
