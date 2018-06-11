@@ -177,6 +177,8 @@ void Main::doWork() {
     cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .4, 0, 1, 8);
 
     // imAcqHasMoreFrames(imAcq)
+    tic_global = static_cast<double>(getTickCount());
+    unsigned int pubFrameCount = 0;
     while (stop == false) {
         // Loop spinner
         ros::spinOnce();
@@ -190,6 +192,15 @@ void Main::doWork() {
             }
         }
         if(isToggeled) {
+
+            toc_global = static_cast<double>(getTickCount()) - tic_global;
+            
+            if (static_cast<float>(toc_global)/getTickFrequency() >= 1) {
+                ROS_DEBUG("Passed time: %f", static_cast<float>(toc_global)/getTickFrequency());
+                ROS_DEBUG("FPS: %d", pubFrameCount);
+                pubFrameCount = 0;
+                tic_global = static_cast<double>(getTickCount());
+            }
 
             if (newBB) {
 
@@ -209,14 +220,17 @@ void Main::doWork() {
                 Rect bb = tldArrayToRect(initialBB);
                 tic = static_cast<double>(getTickCount());
                 tld->selectObject(colorImage, &bb);
-                toc = static_cast<double>(getTickCount()) - tic;
+                toc = (static_cast<double>(getTickCount()) - tic)/static_cast<float>(getTickFrequency());
                 skipProcessingOnce = true;
                 reuseFrameOnce = true;
+                ROS_DEBUG("---> Re-init of bounding box took %f seconds", toc);
                 
                 newBB = false;
             }
 
-	        if (ros_grabber->getLastFrameNr() % 2 == 0) {
+	        if (ros_grabber->getLastFrameNr() % frame_modulo == 0) {
+
+                ROS_DEBUG("\tProcessing image with frame nr: %d", ros_grabber->getLastFrameNr());
 
 	            tic_global = static_cast<double>(getTickCount());
 
@@ -305,9 +319,11 @@ void Main::doWork() {
 
                     pub_detect_heads.publish(supremePeople);
                     cvPutText(img, string, cvPoint(15, 15), &font, red);
+                    pubFrameCount++;;
 
                     // Publish every 10th cycle
                     if (last_frame_nr % 10 == 0) {
+                        ROS_DEBUG("\t\tPublishing image with frame nr: %d", last_frame_nr);
                         sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", cvarrToMat(img, false)).toImageMsg();
                         pub.publish(msg);
                     }
@@ -358,14 +374,12 @@ void Main::doWork() {
                         cvSaveImage(fileName, img);
                     }
 		        }
-
-                toc_global = static_cast<double>(getTickCount()) - tic_global;
-                float fps_global = static_cast<float>(getTickFrequency()) / toc_global;
-                ROS_DEBUG("FPS (modulo frame): %f", fps_global);
-
-            } else { // frame % 2 == 0
-              std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            // frame % 2 == 0
+            } else {
+                ROS_DEBUG("\tOmitting frame with id: %d", ros_grabber->getLastFrameNr());
+                std::this_thread::sleep_for(std::chrono::milliseconds(20));
             }
+
 	    } // is toggle
 
 	    std::this_thread::sleep_for(std::chrono::milliseconds(20));

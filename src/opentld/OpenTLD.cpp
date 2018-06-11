@@ -65,6 +65,7 @@ int main(int argc, char **argv)
     }
 
     main->tld->seed = main->seed;
+    main->frame_modulo = config.m_settings.frame_modulo;
     imAcqInit(imAcq);
 
     if (main->showOutput)

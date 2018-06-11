@@ -86,7 +86,7 @@ namespace tld
         // check cli arguments
         int c;
 
-        while ((c = getopt(argc, argv, "a:b:C:d:D:e:fhi:j:m:n:Op:qst:z:x")) != -1)
+        while ((c = getopt(argc, argv, "a:b:C:d:D:e:f:fhi:j:m:n:Op:qst:z:x")) != -1)
         {
             switch (c)
             {
@@ -177,6 +177,9 @@ namespace tld
                 break;
             case 'D':
                 m_settings.depth_topic = optarg;
+                break;
+            case 'f':
+                m_settings.frame_modulo = atoi(optarg);
                 break;
             }
         }
@@ -511,6 +514,8 @@ namespace tld
         std::cout << "ros color setting: " << m_settings.color_topic << std::endl;
 
         std::cout << "ros depth setting: " << m_settings.depth_topic << std::endl;
+
+        std::cout << "frame modulo setting: " << m_settings.frame_modulo << std::endl;
 
         return SUCCESS;
     }

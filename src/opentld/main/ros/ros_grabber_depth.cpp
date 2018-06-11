@@ -113,7 +113,7 @@ int ROSGrabberDepth::getLastFrameNr() {
 void ROSGrabberDepth::depthInfoCallback(const sensor_msgs::CameraInfoConstPtr& cameraInfoMsg) {
     ROS_DEBUG(">>> Entered depth info callback");
     if(!depthConstant_factor_is_set) {
-        ROS_INFO(">>> Setting depthConstant_factor");
+        ROS_DEBUG(">>> Setting depthConstant_factor");
         depthConstant_factor = cameraInfoMsg->K[4];
         camera_image_rgb_width = cameraInfoMsg->width; //Depth and rgb will be halved afterwards so this is okay
         camera_image_depth_width = cameraInfoMsg->width/2;
@@ -145,7 +145,7 @@ geometry_msgs::PoseStamped ROSGrabberDepth::getDetectionPose(const cv::Mat & dep
         base_link_pose.header.frame_id = "map";
 
         try{
-            ROS_DEBUG(">>> Transforming received position into MAP coordinate system.");
+            //ROS_DEBUG(">>> Transforming received position into MAP coordinate system.");
             listener->waitForTransform(camera_pose.header.frame_id, base_link_pose.header.frame_id, camera_pose.header.stamp, ros::Duration(3.0));
             listener->transformPose(base_link_pose.header.frame_id, ros::Time(0), camera_pose, camera_pose.header.frame_id, base_link_pose);
         } catch(tf::TransformException ex) {
@@ -159,7 +159,7 @@ geometry_msgs::PoseStamped ROSGrabberDepth::getDetectionPose(const cv::Mat & dep
 }
 
 void ROSGrabberDepth::createVisualisation(geometry_msgs::Pose& pose, ros::Publisher &pub) {
-    ROS_DEBUG(">>> Creating markers");
+    //ROS_DEBUG(">>> Creating markers");
     visualization_msgs::MarkerArray marker_array;
     std::vector <visualization_msgs::Marker> human = createHuman(0, pose);
     marker_array.markers.insert(marker_array.markers.begin(), human.begin(), human.end());
@@ -232,7 +232,7 @@ cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, cv::Rect* bb) {
         float median = arr_size % 2 ? depth_samples[arr_size/2] : (depth_samples[arr_size/2-1] + depth_samples[arr_size/2]) / 2;
 
         depth = median;
-		ROS_DEBUG("%f", depth);
+		//ROS_DEBUG("%f", depth);
 		isValid = depth != 0.0f;
 
 	} else {
@@ -270,7 +270,7 @@ cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, cv::Rect* bb) {
         float median = arr_size % 2 ? depth_samples[arr_size/2] : (depth_samples[arr_size/2-1] + depth_samples[arr_size/2]) / 2;
 
         depth = median;
-        ROS_DEBUG("%f", depth);
+        //ROS_DEBUG("%f", depth);
 		isValid = isfinite(depth);
 	}
 

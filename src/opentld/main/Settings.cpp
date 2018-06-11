@@ -59,7 +59,8 @@ namespace tld
         m_seed(0),
         m_threshold(0.7f),
         m_proportionalShift(0.1f),
-        m_initialBoundingBox(vector<int>())
+        m_initialBoundingBox(vector<int>()),
+        frame_modulo(2)
     {
     }
 

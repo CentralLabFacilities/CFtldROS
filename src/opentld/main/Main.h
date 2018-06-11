@@ -74,6 +74,7 @@ public:
     const char *modelExportFile;
     int seed;
     int last_frame_nr;
+    unsigned int frame_modulo;
 
     bool toggleCB(clf_perception_vision_msgs::ToggleCFtldTrackingWithBB::Request& request, clf_perception_vision_msgs::ToggleCFtldTrackingWithBB::Response& response);
 

@@ -79,6 +79,7 @@ namespace tld
         std::vector<int> m_initialBoundingBox; //!< Initial Bounding Box can be specified here
         std::string depth_topic;
         std::string color_topic;
+        int frame_modulo;
     };
 }
 
