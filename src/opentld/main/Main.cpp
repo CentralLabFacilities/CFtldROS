@@ -183,7 +183,7 @@ void Main::doWork() {
         // Make sure we only run with image framerate to save CPU cycles
         if(isRosUsed) {
             if(!(ros_grabber->getLastFrameNr() != last_frame_nr)) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(5));
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 last_frame_nr = ros_grabber->getLastFrameNr();
                 // ROS_DEBUG(">>> Skipping computation step ...");
                 continue;
@@ -368,6 +368,8 @@ void Main::doWork() {
             ROS_DEBUG("FPS: %f", fps_global);
 
 	    } // is toggle
+
+	    std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
         if (reuseFrameOnce) {
             reuseFrameOnce = false;
