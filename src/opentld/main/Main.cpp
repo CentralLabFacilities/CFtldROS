@@ -55,10 +55,10 @@ bool Main::toggleCB(clf_perception_vision_msgs::ToggleCFtldTrackingWithBB::Reque
     if (request.roi.width != 0 && request.roi.height != 0) {
         ROS_INFO("Tracking is now active");
         initialBB = new int[4];
-        initialBB[0] = request.roi.x_offset/2;
-        initialBB[1] = request.roi.y_offset/2;
-        initialBB[2] = request.roi.width/2;
-        initialBB[3] = request.roi.height/2;
+        initialBB[0] = request.roi.x_offset*0.375;
+        initialBB[1] = request.roi.y_offset*0.375;
+        initialBB[2] = request.roi.width*0.375;
+        initialBB[3] = request.roi.height*0.375;
         newBB = true;
         isToggeled = true;
         ROS_DEBUG("Bounding Box x: %d, y: %d, w: %d, h: %d received", initialBB[0], initialBB[1], initialBB[2], initialBB[3]);
@@ -115,7 +115,7 @@ void Main::doWork() {
             }
         }
         // Don't resize depth image, it is already 320x240 on Pepper!
-        cv::resize(colorImage, colorImage, cv::Size(), 0.50, 0.50);
+        cv::resize(colorImage, colorImage, cv::Size(), 0.375, 0.375);
         img = new IplImage(colorImage);
     }
 
@@ -211,7 +211,7 @@ void Main::doWork() {
                 } else {
                     ros_grabber->getImage(&colorImage);
                     ros_grabber_depth->getImage(&depthImage);
-                    cv::resize(colorImage, colorImage, cv::Size(), 0.50, 0.50);
+                    cv::resize(colorImage, colorImage, cv::Size(), 0.375, 0.375);
                     img = new IplImage(colorImage);
                     last_frame_nr = ros_grabber->getLastFrameNr();
                 }
@@ -241,7 +241,7 @@ void Main::doWork() {
                     } else {
                         ros_grabber->getImage(&colorImage);
                         ros_grabber_depth->getImage(&depthImage);
-                        cv::resize(colorImage, colorImage, cv::Size(), 0.50, 0.50);
+                        cv::resize(colorImage, colorImage, cv::Size(), 0.375, 0.375);
                         img = new IplImage(colorImage);
                         last_frame_nr = ros_grabber->getLastFrameNr();
                     }

@@ -51,7 +51,9 @@ namespace tld
 
     void Gui::showImage(IplImage *image)
     {
-        cvShowImage(m_window_name.c_str(), image);
+        cv::Mat img;
+        cv::resize(cv::cvarrToMat(image), img, cvSize(640,480));
+        cv::imshow(m_window_name.c_str(), img);
     }
 
     char Gui::getKey()

@@ -168,8 +168,8 @@ void ROSGrabberDepth::createVisualisation(geometry_msgs::Pose& pose, ros::Publis
 
 cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, cv::Rect* bb) {
 
-    double x = (bb->br().x - bb->size().width/2) + 0.5f;
-    double y = (bb->br().y - bb->size().height/2) + 0.5f;
+    double x = (bb->br().x - bb->size().width/2)*1.33 + 0.5f;
+    double y = (bb->br().y - bb->size().height/2)*1.33 + 0.5f;
  
     if(!(x >=0 && x<depthImage.cols && y >=0 && y<depthImage.rows))
 	{
