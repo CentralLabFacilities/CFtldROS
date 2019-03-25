@@ -40,7 +40,6 @@
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 #include <geometry_msgs/PoseStamped.h>
-#include "bayes_people_tracker_msgs/PeopleWithHead.h"
 #include <people_msgs/People.h>
 #include <people_msgs/Person.h>
 
@@ -55,10 +54,10 @@ bool Main::toggleCB(clf_perception_vision_msgs::ToggleCFtldTrackingWithBB::Reque
     if (request.roi.width != 0 && request.roi.height != 0) {
         ROS_INFO("Tracking is now active");
         initialBB = new int[4];
-        initialBB[0] = request.roi.x_offset*0.375;
-        initialBB[1] = request.roi.y_offset*0.375;
-        initialBB[2] = request.roi.width*0.375;
-        initialBB[3] = request.roi.height*0.375;
+        initialBB[0] = request.roi.x_offset;
+        initialBB[1] = request.roi.y_offset;
+        initialBB[2] = request.roi.width;
+        initialBB[3] = request.roi.height;
         newBB = true;
         isToggeled = true;
         ROS_DEBUG("Bounding Box x: %d, y: %d, w: %d, h: %d received", initialBB[0], initialBB[1], initialBB[2], initialBB[3]);
@@ -87,7 +86,7 @@ void Main::doWork() {
     ROS_INFO(">>> Setting up ros subcribers");
     image_transport::ImageTransport it(ros_grabber->node_handle_);
     image_transport::Publisher pub = it.advertise("cftld/detection", 1);
-    ros::Publisher pub_detect_heads = ros_grabber_depth->node_handle_.advertise<bayes_people_tracker_msgs::PeopleWithHead>("/people_tracker/people_with_head", 1);
+    ros::Publisher pub_detection = ros_grabber_depth->node_handle_.advertise<people_msgs::People>("/cftld/sensor/person_to_follow", 1);
     ros::Publisher pub_marker_array = ros_grabber_depth->node_handle_.advertise<visualization_msgs::MarkerArray>("/cftld/marker_array", 1);
     ROS_INFO(">>> Subscribers initialized");
 
@@ -115,7 +114,7 @@ void Main::doWork() {
             }
         }
         // Don't resize depth image, it is already 320x240 on Pepper!
-        cv::resize(colorImage, colorImage, cv::Size(), 0.375, 0.375);
+        // cv::resize(colorImage, colorImage, cv::Size(), 0.375, 0.375);
         img = new IplImage(colorImage);
     }
 
@@ -211,7 +210,7 @@ void Main::doWork() {
                 } else {
                     ros_grabber->getImage(&colorImage);
                     ros_grabber_depth->getImage(&depthImage);
-                    cv::resize(colorImage, colorImage, cv::Size(), 0.375, 0.375);
+                    //cv::resize(colorImage, colorImage, cv::Size(), 0.375, 0.375);
                     img = new IplImage(colorImage);
                     last_frame_nr = ros_grabber->getLastFrameNr();
                 }
@@ -241,7 +240,7 @@ void Main::doWork() {
                     } else {
                         ros_grabber->getImage(&colorImage);
                         ros_grabber_depth->getImage(&depthImage);
-                        cv::resize(colorImage, colorImage, cv::Size(), 0.375, 0.375);
+                        //cv::resize(colorImage, colorImage, cv::Size(), 0.375, 0.375);
                         img = new IplImage(colorImage);
                         last_frame_nr = ros_grabber->getLastFrameNr();
                     }
@@ -298,25 +297,24 @@ void Main::doWork() {
                     // Fixme, blue lol.
                     CvScalar red = CV_RGB(30, 144, 255);
 
-                    bayes_people_tracker_msgs::PeopleWithHead supremePeople;
+                    people_msgs::People detections;
 
                     if (tld->currBB != NULL) {
                         CvScalar rectangleColor = red;
                         cvRectangle(img, tld->currBB->tl(), tld->currBB->br(), rectangleColor, 2, 8, 0);
                         geometry_msgs::PoseStamped pose = ros_grabber_depth->getDetectionPose(depthImage, tld->currBB);
                         if (pose.header.frame_id != "invalid") {
-                            supremePeople.header = pose.header;
+                            detections.header = pose.header;
                             people_msgs::Person person;
-                            person.name = "trackedPerson";
+                            person.name = "tracked_person";
                             person.position = pose.pose.position;
                             person.reliability = 1.0;
-                            supremePeople.people.push_back(person);
-                            supremePeople.head_positions.push_back(pose.pose.position);
+                            detections.people.push_back(person);
                             ros_grabber_depth->createVisualisation(pose.pose, pub_marker_array);
                         }
                     }
 
-                    pub_detect_heads.publish(supremePeople);
+                    pub_detection.publish(detections);
                     cvPutText(img, string, cvPoint(15, 15), &font, red);
                     pubFrameCount++;;
 

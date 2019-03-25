@@ -52,8 +52,8 @@ using namespace cv;
 using namespace std;
 
 ROSGrabberDepth::ROSGrabberDepth(std::string i_scope) : it_(node_handle_) {
-    image_sub_ = it_.subscribe(i_scope, 1, &ROSGrabberDepth::imageCallback, this);
-    info_depth_sub = node_handle_.subscribe("/pepper_robot/camera/depth/camera_info", 1, &ROSGrabberDepth::depthInfoCallback, this);
+    image_sub_ = it_.subscribe(i_scope+"/image_raw", 1, &ROSGrabberDepth::imageCallback, this);
+    info_depth_sub = node_handle_.subscribe(i_scope+"/camera_info", 1, &ROSGrabberDepth::depthInfoCallback, this);
     listener = new tf::TransformListener();
     frame_nr = -1;
     pyr = 0;
@@ -85,7 +85,7 @@ void ROSGrabberDepth::imageCallback(const sensor_msgs::ImageConstPtr &msg) {
     frame_id = msg->header.frame_id;
     source_frame = cv_ptr->image;
     if (pyr > 0) {
-        cv::pyrUp(source_frame, output_frame, cv::Size(source_frame.cols*2, source_frame.rows*2));
+        cv::pyrUp(source_frame, output_frame, cv::Size(source_frame.cols, source_frame.rows));
     } else {
         output_frame = source_frame;
     }
@@ -113,10 +113,16 @@ int ROSGrabberDepth::getLastFrameNr() {
 void ROSGrabberDepth::depthInfoCallback(const sensor_msgs::CameraInfoConstPtr& cameraInfoMsg) {
     ROS_DEBUG(">>> Entered depth info callback");
     if(!depthConstant_factor_is_set) {
-        ROS_DEBUG(">>> Setting depthConstant_factor");
+        ROS_INFO(">>> Setting camera intrinsics - fx: %f; fy: %f; cx: %f; cy: %f", cameraInfoMsg->P[0], cameraInfoMsg->P[5], cameraInfoMsg->P[2], cameraInfoMsg->P[6]);
+        ROS_INFO(">>> Depth camera intrinsics - depth_constant: %f; w: %f; h: %f", cameraInfoMsg->K[4], cameraInfoMsg->width, cameraInfoMsg->height);
         depthConstant_factor = cameraInfoMsg->K[4];
         camera_image_rgb_width = cameraInfoMsg->width;
         camera_image_depth_width = cameraInfoMsg->width;
+        depth_fx = cameraInfoMsg->P[0];
+        depth_fy = cameraInfoMsg->P[5];
+        depth_cx = cameraInfoMsg->P[2];
+        depth_cy = cameraInfoMsg->P[6];
+
         depthConstant_factor_is_set = true;
     } else {
       // Unsubscribe, we only need that once.
@@ -168,8 +174,8 @@ void ROSGrabberDepth::createVisualisation(geometry_msgs::Pose& pose, ros::Publis
 
 cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, cv::Rect* bb) {
 
-    double x = (bb->br().x - bb->size().width/2)*1.33 + 0.5f;
-    double y = (bb->br().y - bb->size().height/2)*1.33 + 0.5f;
+    double x = (bb->br().x - bb->size().width/2) + 0.5f;
+    double y = (bb->br().y - bb->size().height/2) + 0.5f;
  
     if(!(x >=0 && x<depthImage.cols && y >=0 && y<depthImage.rows))
 	{
@@ -184,96 +190,72 @@ cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, cv::Rect* bb) {
 
 	// Use correct principal point from calibration
     float depthConstant_ = 1.0f/depthConstant_factor;
-	float center_x = float(depthImage.cols/2)-0.5f; //cameraInfo.K.at(2)
-	float center_y = float(depthImage.rows/2)-0.5f; //cameraInfo.K.at(5)
 
-	bool isInMM = depthImage.type() == CV_16UC1; // is in mm?
+    // TODO: Make ros param!
+	bool isInMM = false;//depthImage.type() == CV_16UC1; // is in mm?
 
-	// Combine unit conversion (if necessary) with scaling by focal length for computing (X,Y)
+    bool is16BitType = depthImage.type() == CV_16UC1; // is in mm?
+
 	float unit_scaling = isInMM?0.001f:1.0f;
-	float constant_x = unit_scaling / (1.0f/depthConstant_); //cameraInfo.K.at(0)
-	float constant_y = unit_scaling / (1.0f/depthConstant_); //cameraInfo.K.at(4)
-	float bad_point = numeric_limits<float>::quiet_NaN();
+    float constant_x = unit_scaling / depth_fx; //cameraInfo.K.at(0)
+    float constant_y = unit_scaling / depth_fy; //cameraInfo.K.at(4)
+    float bad_point = std::numeric_limits<float>::quiet_NaN();
 
-	float depth;
-	bool isValid;
+    float depth;
+    bool isValid;
 
-	if(isInMM) {
-	    // ROS_DEBUG(">>> Image is in Millimeters");
-	    float depth_samples[13];
-
+    if(is16BitType) {
         // Sample fore depth points to the right, left, top and down
-        for (int i=0; i<3; i++) {
-            if (x+i <= bb->br().x) {
-                depth_samples[i] = (float)depthImage.at<uint16_t>(y,x+i);
-            } else {
-                depth_samples[i] = (float)depthImage.at<uint16_t>(y,x);
+        std::vector<float> valueList;
+        for (int i=0; i<5; i++) {
+            if((float)depthImage.at<uint16_t>(y,x+i) != 0){
+                valueList.push_back((float)depthImage.at<uint16_t>(y,x+i));
             }
-            if (x-i >= bb->tl().x) {
-                depth_samples[i+3] = (float)depthImage.at<uint16_t>(y,x-i);
-            } else {
-                depth_samples[i+3] = (float)depthImage.at<uint16_t>(y,x);
+            if((float)depthImage.at<uint16_t>(y,x-i) != 0){
+                valueList.push_back((float)depthImage.at<uint16_t>(y,x-i));
             }
-            if (y+i <= bb->br().y) {
-                depth_samples[i+6] = (float)depthImage.at<uint16_t>(y+i,x);
-            } else {
-                depth_samples[i+6] = (float)depthImage.at<uint16_t>(y,x);
+            if((float)depthImage.at<uint16_t>(y+i,x) != 0){
+                valueList.push_back((float)depthImage.at<uint16_t>(y+i,x));
             }
-            if (y-i >= bb->tl().y) {
-                depth_samples[i+9] = (float)depthImage.at<uint16_t>(y-i,x);
-            } else {
-                depth_samples[i+9] = (float)depthImage.at<uint16_t>(y,x);
+            if((float)depthImage.at<uint16_t>(y-i,x) != 0){
+                valueList.push_back((float)depthImage.at<uint16_t>(y-i,x));
             }
         }
 
-        depth_samples[12] = (float)depthImage.at<uint16_t>(y, x);
+        ROS_DEBUG("Sampled %d values", valueList.size());
 
-        int arr_size = sizeof(depth_samples)/sizeof(float);
-        sort(&depth_samples[0], &depth_samples[arr_size]);
-        float median = arr_size % 2 ? depth_samples[arr_size/2] : (depth_samples[arr_size/2-1] + depth_samples[arr_size/2]) / 2;
-
-        depth = median;
-		//ROS_DEBUG("%f", depth);
-		isValid = depth != 0.0f;
-
-	} else {
-		// ROS_DEBUG(">>> Image is in Meters");
-		float depth_samples[13];
-
-        // Sample fore depth points to the right, left, top and down
-        for (int i=0; i<3; i++) {
-            if (x+i <= bb->br().x) {
-                depth_samples[i] = (float)depthImage.at<float>(y,x+i);
-            } else {
-                depth_samples[i] = (float)depthImage.at<float>(y,x);
-            }
-            if (x-i >= bb->tl().x) {
-                depth_samples[i+3] = (float)depthImage.at<float>(y,x-i);
-            } else {
-                depth_samples[i+3] = (float)depthImage.at<float>(y,x);
-            }
-            if (y+i <= bb->br().y) {
-                depth_samples[i+6] = (float)depthImage.at<float>(y+i,x);
-            } else {
-                depth_samples[i+6] = (float)depthImage.at<float>(y,x);
-            }
-            if (y-i >= bb->tl().y) {
-                depth_samples[i+9] = (float)depthImage.at<float>(y-i,x);
-            } else {
-                depth_samples[i+9] = (float)depthImage.at<float>(y,x);
-            }
+        if(!valueList.empty()) {
+            std::sort (valueList.begin(), valueList.end());
+            float median = valueList[(int)(valueList.size()/2)];
+            depth = median;
+            ROS_DEBUG("Median of depth: %f", depth);
+            isValid = true;
+        } else {
+            depth = 0;
+            isValid = false;
         }
 
-        depth_samples[12] = (float)depthImage.at<float>(y, x);
+    } else {
+        float depth_samples[21];
+
+        // Sample fore depth points to the right, left, top and down
+        for (int i=0; i<5; i++) {
+            depth_samples[i] = depthImage.at<float>(y,x+i);
+            depth_samples[i+5] = depthImage.at<float>(y,x-i);
+            depth_samples[i+10] = depthImage.at<float>(y+i,x);
+            depth_samples[i+15] = depthImage.at<float>(y-i,x);
+        }
+
+        depth_samples[20] = depthImage.at<float>(y,x);
 
         int arr_size = sizeof(depth_samples)/sizeof(float);
-        sort(&depth_samples[0], &depth_samples[arr_size]);
+        std::sort(&depth_samples[0], &depth_samples[arr_size]);
         float median = arr_size % 2 ? depth_samples[arr_size/2] : (depth_samples[arr_size/2-1] + depth_samples[arr_size/2]) / 2;
 
         depth = median;
-        //ROS_DEBUG("%f", depth);
-		isValid = isfinite(depth);
-	}
+        ROS_DEBUG("Median of depth: %f", depth);
+        isValid = std::isfinite(depth);
+    }
 
 	// Check for invalid measurements
 	if (!isValid)
@@ -282,8 +264,8 @@ cv::Vec3f ROSGrabberDepth::getDepth(const cv::Mat & depthImage, cv::Rect* bb) {
 		pt.val[0] = pt.val[1] = pt.val[2] = bad_point;
 	} else{
 		// Fill in XYZ
-        pt.val[0] = (float(x) - center_x) * depth * constant_x;
-		pt.val[1] = (float(y) - center_y) * depth * constant_y;
+        pt.val[0] = (float(x) - depth_cx) * depth * constant_x;
+		pt.val[1] = (float(y) - depth_cy) * depth * constant_y;
 		pt.val[2] = depth*unit_scaling;
 	}
     

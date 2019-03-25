@@ -52,7 +52,7 @@ using namespace cv;
 using namespace std;
 
 ROSGrabber::ROSGrabber(std::string i_scope) : it_(node_handle_) {
-    image_sub_ = it_.subscribe(i_scope, 1, &ROSGrabber::imageCallback, this);
+    image_sub_ = it_.subscribe(i_scope+"/image_raw", 1, &ROSGrabber::imageCallback, this);
     frame_nr = -1;
     pyr = 0;
     ROS_DEBUG(">>> ROS grabber init done");

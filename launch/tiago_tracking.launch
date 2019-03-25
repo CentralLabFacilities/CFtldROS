@@ -1,0 +1,6 @@
+<launch>
+    <arg name="depth" default="/xtion/depth_registered" />
+    <arg name="rgb" default="/xtion/rgb" />
+    <node pkg="cf_tld_ros" type="cftld" name="cftld_tracker" output="screen" respawn="true" args="-d ROS -D $(arg depth) -C $(arg rgb)"/>
+
+</launch> 

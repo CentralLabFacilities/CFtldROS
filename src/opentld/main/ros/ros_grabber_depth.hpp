@@ -104,10 +104,14 @@ private:
     std::recursive_mutex mtx;
 
     //DepthImage stuff
+    float depth_fx;
+    float depth_fy;
+    float depth_cx;
+    float depth_cy;
     float depthConstant_;
     float depthConstant_factor;
     float camera_image_rgb_width;
-    float scale_factor_ = 2.0;
+    float scale_factor_ = 1.0;
     float camera_image_depth_width;
     bool depthConstant_factor_is_set = false;
     tf::TransformListener* listener;
