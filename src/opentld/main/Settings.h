@@ -47,7 +47,6 @@ namespace tld
         bool m_ensembleClassifierEnabled;
         bool m_nnClassifierEnabled;
         bool m_useProportionalShift; //!< sets scanwindows off by a percentage value of the window dimensions (specified in proportionalShift) rather than 1px.
-        bool m_selectManually; //!< if true, user can select initial bounding box (which then overrides the setting "initialBoundingBox")
         bool m_learningEnabled; //!< enables learning while processing
         bool m_showOutput; //!< creates a window displaying results
         bool m_showNotConfident; //!< show bounding box also if confidence is low

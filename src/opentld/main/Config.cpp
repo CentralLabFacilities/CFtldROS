@@ -56,7 +56,6 @@ namespace tld
         "[<path>] <path> to the config file\n";
 
     Config::Config() :
-        m_selectManuallySet(false),
         m_methodSet(false),
         m_startFrameSet(false),
         m_lastFrameSet(false),
@@ -155,10 +154,6 @@ namespace tld
             case 'O':
                 m_settings.m_showOutput = false;
                 m_showOutputSet = true;
-                break;
-            case 's':
-                m_settings.m_selectManually = true;
-                m_selectManuallySet = true;
                 break;
             case 't':
                 m_settings.m_threshold = static_cast<float>(atof(optarg));
@@ -363,10 +358,6 @@ namespace tld
             if (!m_useDsstTrackerSet)
                 m_cfg.lookupValue("useDsstTracker", m_settings.m_useDsstTracker);
 
-            // selectManually
-            if (!m_selectManuallySet)
-                m_cfg.lookupValue("selectManually", m_settings.m_selectManually);
-
             // saveDir
             m_cfg.lookupValue("saveDir", m_settings.m_outputDir);
 
@@ -453,9 +444,6 @@ namespace tld
 
         main->tld->learningEnabled = m_settings.m_learningEnabled;
         std::cout << "m_settings.m_learningEnabled: " << m_settings.m_learningEnabled << std::endl;
-
-        main->selectManually = m_settings.m_selectManually;
-        std::cout << "m_settings.m_selectManually: " << m_settings.m_selectManually << std::endl;
 
         main->seed = m_settings.m_seed;
         std::cout << "m_settings.m_seed: " << m_settings.m_seed << std::endl;

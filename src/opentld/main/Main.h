@@ -29,7 +29,6 @@
 
 #include "TLD.h"
 #include "ImAcq.h"
-#include "Gui.h"
 #include "cf_tracker.hpp"
 
 // ROS
@@ -50,7 +49,6 @@ class Main
 public:
     tld::TLD *tld;
     ImAcq *imAcq;
-    tld::Gui *gui;
     ROSGrabber *ros_grabber;
     ROSGrabberDepth *ros_grabber_depth;
     std::mutex  toggleMutex;
@@ -64,7 +62,6 @@ public:
     double threshold;
     bool showForeground;
     bool showNotConfident;
-    bool selectManually;
     int *initialBB;
     bool reinit;
     bool exportModelAfterRun;
@@ -94,8 +91,6 @@ public:
         isToggeled = false;
         newBB = false;
 
-        selectManually = 0;
-
         initialBB = NULL;
         showNotConfident = true;
 
@@ -107,7 +102,6 @@ public:
         modelExportFile = "model";
         seed = 0;
 
-        gui = NULL;
         modelPath = NULL;
         imAcq = NULL;
 

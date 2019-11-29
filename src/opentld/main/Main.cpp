@@ -30,7 +30,6 @@
 #include "Main.h"
 #include "Config.h"
 #include "ImAcq.h"
-#include "Gui.h"
 #include "TLDUtil.h"
 #include "Trajectory.h"
 #include "opencv2/imgproc/imgproc.hpp"
@@ -81,7 +80,7 @@ void Main::doWork() {
     Trajectory trajectory;
 
     Mat colorImage, depthImage;
-    IplImage *img;
+    Mat *img;
 
     ROS_INFO(">>> Setting up ros subcribers");
     image_transport::ImageTransport it(ros_grabber->node_handle_);
@@ -96,7 +95,7 @@ void Main::doWork() {
     if (!isRosUsed) {
         printf(">> ROS IS OFF\n");
         img = imAcqGetImg(imAcq);
-        colorImage = cvarrToMat(img, true);
+        colorImage = *img;
     } else {
         ROS_DEBUG(">>> ROS IS ON");
         // first spin, to get callback in the queue
@@ -115,7 +114,7 @@ void Main::doWork() {
         }
         // Don't resize depth image, it is already 320x240 on Pepper!
         // cv::resize(colorImage, colorImage, cv::Size(), 0.375, 0.375);
-        img = new IplImage(colorImage);
+        img = &colorImage;
     }
 
     if (colorImage.channels() == 1)
@@ -123,26 +122,6 @@ void Main::doWork() {
 
     if (showTrajectory)     {
         trajectory.init(trajectoryLength);
-    }
-
-    if (selectManually) {
-        CvRect box;
-
-        if (getBBFromUser(img, box, gui) == PROGRAM_EXIT) {
-            return;
-        }
-
-        toggleMutex.lock();
-
-        if (initialBB == NULL) {
-            initialBB = new int[4];
-        }
-
-        initialBB[0] = box.x;
-        initialBB[1] = box.y;
-        initialBB[2] = box.width;
-        initialBB[3] = box.height;
-        toggleMutex.unlock();
     }
 
     FILE *resultsFile = NULL;
@@ -172,9 +151,6 @@ void Main::doWork() {
         reuseFrameOnce = true;
     }
 
-    CvFont font;
-    cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .4, 0, 1, 8);
-
     // imAcqHasMoreFrames(imAcq)
     tic_global = static_cast<double>(getTickCount());
     unsigned int pubFrameCount = 0;
@@ -202,16 +178,15 @@ void Main::doWork() {
             }
 
             if (newBB) {
-
                 if (!isRosUsed) {
-                    cvReleaseImage(&img);
+                    img->release();
                     img = imAcqGetImg(imAcq);
-                    colorImage = cvarrToMat(img, true);
+                    colorImage = *img;
                 } else {
                     ros_grabber->getImage(&colorImage);
                     ros_grabber_depth->getImage(&depthImage);
                     //cv::resize(colorImage, colorImage, cv::Size(), 0.375, 0.375);
-                    img = new IplImage(colorImage);
+                    img = &colorImage;
                     last_frame_nr = ros_grabber->getLastFrameNr();
                 }
 
@@ -234,14 +209,14 @@ void Main::doWork() {
                 if (!reuseFrameOnce && (!paused || step)) {
 
                     if (!isRosUsed) {
-                        cvReleaseImage(&img);
+                        img->release();
                         img = imAcqGetImg(imAcq);
-                        colorImage = cvarrToMat(img, true);
+                        colorImage = *img;
                     } else {
                         ros_grabber->getImage(&colorImage);
                         ros_grabber_depth->getImage(&depthImage);
                         //cv::resize(colorImage, colorImage, cv::Size(), 0.375, 0.375);
-                        img = new IplImage(colorImage);
+                        img = &colorImage;
                         last_frame_nr = ros_grabber->getLastFrameNr();
                     }
 
@@ -276,7 +251,7 @@ void Main::doWork() {
                     }
                 }
 
-                if (showOutput || saveDir != NULL || isRosUsed) {
+                if (saveDir != NULL || isRosUsed) {
 
                     char string[128];
                     char learningString[10] = "";
@@ -290,17 +265,15 @@ void Main::doWork() {
 
                     sprintf(string, "#%d, fps: %.2f, #numwin:%d, %s", imAcq->currentFrame - 1,
                             fps, tld->detectorCascade->numWindows, learningString);
-                    CvScalar yellow = CV_RGB(255, 255, 0);
-                    CvScalar blue = CV_RGB(0, 0, 255);
-                    CvScalar black = CV_RGB(0, 0, 0);
-                    CvScalar white = CV_RGB(255, 255, 255);
-                    // Fixme, blue lol.
-                    CvScalar red = CV_RGB(30, 144, 255);
+                    cv::Scalar yellow = CV_RGB(255, 255, 0);
+                    cv::Scalar black = CV_RGB(0, 0, 0);
+                    cv::Scalar white = CV_RGB(255, 255, 255);
+                    cv::Scalar blue = CV_RGB(30, 144, 255);
 
                     people_msgs::People detections;
 
                     if (tld->currBB != NULL) {
-                        CvScalar rectangleColor = red;
+                        cv::Scalar rectangleColor = blue;
                         cvRectangle(img, tld->currBB->tl(), tld->currBB->br(), rectangleColor, 2, 8, 0);
                         geometry_msgs::PoseStamped pose = ros_grabber_depth->getDetectionPose(depthImage, tld->currBB);
                         if (pose.header.frame_id != "invalid") {
@@ -314,55 +287,16 @@ void Main::doWork() {
                         }
                     }
 
-                    pub_detection.publish(detections);
-                    cvPutText(img, string, cvPoint(15, 15), &font, red);
+                    if (pub_detection.getNumSubscribers() > 0) {
+                        pub_detection.publish(detections);
+                    }
+                    cv::putText(img, string, cv::Point(15, 15), CV_FONT_HERSHEY_SIMPLEX, 0.4, blue, 1, 8)
                     pubFrameCount++;;
 
                     // Publish every 6th cycle
-                    if (last_frame_nr % 6 == 0) {
-                        ROS_DEBUG("\t\tPublishing image with frame nr: %d", last_frame_nr);
-                        sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", cvarrToMat(img, false)).toImageMsg();
+                    if (pub.getNumSubscribers() > 0 and last_frame_nr % 6 == 0) {
+                        sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", img).toImageMsg();
                         pub.publish(msg);
-                    }
-
-                    if (showOutput) {
-                        gui->showImage(img);
-                        char key = gui->getKey();
-
-                        if (key == 'q')
-                            break;
-
-                        if (key == 'p')
-                            paused = !paused;
-
-                        if (paused && key == 's')
-                            step = true;
-
-                        if (key == 'c') {
-                            //clear everything
-                            tld->release();
-                        }
-
-                        if (key == 'l') {
-                            tld->learningEnabled = !tld->learningEnabled;
-                            printf("LearningEnabled: %d\n", tld->learningEnabled);
-                        }
-
-                        if (key == 'a') {
-                            tld->alternating = !tld->alternating;
-                            printf("alternating: %d\n", tld->alternating);
-                        }
-
-                        if (key == 'r') {
-                            CvRect box;
-
-                            if (getBBFromUser(img, box, gui) == PROGRAM_EXIT) {
-                                break;
-                            }
-
-                            Rect r = Rect(box);
-                            tld->selectObject(colorImage, &r);
-                        }
                     }
 
                     if (saveDir != NULL) {
@@ -391,7 +325,7 @@ void Main::doWork() {
     ROS_INFO(">>> Bye Bye!");
 
     if (!isRosUsed) {
-        cvReleaseImage(&img);
+        img->release();
     }
 
     img = NULL;

@@ -34,7 +34,6 @@ namespace tld
         m_nnClassifierEnabled(true),
         m_trackerEnabled(true),
         m_detectorEnabled(true),
-        m_selectManually(false),
         m_learningEnabled(true),
         m_showOutput(true),         // true
         m_showNotConfident(true),   // true

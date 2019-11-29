@@ -20,12 +20,10 @@ add_library(main
     main/ros/ros_grabber_depth.cpp
     main/ros/ros_grabber_depth.hpp
     main/Config.cpp
-    main/Gui.cpp
     main/Main.cpp
     main/Settings.cpp
     main/Trajectory.cpp
     main/Config.h
-    main/Gui.h
     main/Main.h
     main/Settings.h
     main/Trajectory.h

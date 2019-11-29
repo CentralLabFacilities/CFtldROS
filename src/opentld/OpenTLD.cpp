@@ -24,7 +24,6 @@
 #include "Main.h"
 #include "Config.h"
 #include "ImAcq.h"
-#include "Gui.h"
 #include <random>
 
 // ROS
@@ -33,7 +32,6 @@
 #include "ros/ros_grabber_depth.hpp"
 
 using tld::Config;
-using tld::Gui;
 using tld::Settings;
 
 
@@ -44,9 +42,7 @@ int main(int argc, char **argv)
     Main *main = new Main();
     Config config;
     ImAcq *imAcq = imAcqAlloc();
-    Gui *gui = new Gui();
-
-    main->gui = gui;
+    
     main->imAcq = imAcq;
 
     if (config.init(argc, argv) == PROGRAM_EXIT)
@@ -68,18 +64,10 @@ int main(int argc, char **argv)
     main->frame_modulo = config.m_settings.frame_modulo;
     imAcqInit(imAcq);
 
-    if (main->showOutput)
-    {
-        ROS_DEBUG(">>> Initializing GUI");
-        gui->init();
-    }
-
     main->doWork();
 
     delete main;
     main = NULL;
-    delete gui;
-    gui = NULL;
 
     return EXIT_SUCCESS;
 }

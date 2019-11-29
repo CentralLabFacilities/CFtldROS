@@ -78,7 +78,6 @@ namespace tld
          * The cli-arguments have a higher priority than the options
          * in the config file.
          */
-        bool m_selectManuallySet;
         bool m_methodSet;
         bool m_startFrameSet;
         bool m_lastFrameSet;
