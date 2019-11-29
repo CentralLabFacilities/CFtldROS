@@ -21,8 +21,8 @@
 
 #include <cstdio>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include<opencv2/core/core.hpp>
+#include<opencv2/highgui/highgui.hpp>
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32)
 #include <windows.h>
@@ -109,7 +109,7 @@ void imAcqInit(ImAcq *imAcq)
     else if (imAcq->method == IMACQ_ROS) { }
 
     imAcq->startFrame = imAcq->currentFrame;
-    imAcq->startTime = cvGetTickCount();
+    imAcq->startTime = cv::getTickCount();
 }
 
 void imAcqFree(ImAcq *imAcq)
@@ -122,11 +122,11 @@ void imAcqFree(ImAcq *imAcq)
     free(imAcq);
 }
 
-cv::Mat *imAcqLoadImg(ImAcq *imAcq, char *path)
+cv::Mat imAcqLoadImg(ImAcq *imAcq, char *path)
 {
-    cv::Mat *image = &cv::imread(path);
+    cv::Mat image = cv::imread(path);
 
-    if (image == NULL)
+    if (cv::countNonZero(image) < 1)
     {
         printf("Error: %s does not exist or is not an image.\n", path);
     }
@@ -134,20 +134,20 @@ cv::Mat *imAcqLoadImg(ImAcq *imAcq, char *path)
     return image;
 }
 
-cv::Mat *imAcqLoadFrame(ImAcq *imAcq, int fNo)
+cv::Mat imAcqLoadFrame(ImAcq *imAcq, int fNo)
 {
     char path[255];
     sprintf(path, imAcq->imgPath, fNo);
 
-    return &cv::imread(path);
+    return cv::imread(path);
 }
 
-cv::Mat *imAcqLoadCurrentFrame(ImAcq *imAcq)
+cv::Mat imAcqLoadCurrentFrame(ImAcq *imAcq)
 {
     return imAcqLoadFrame(imAcq, imAcq->currentFrame);
 }
 
-cv::Mat *imAcqGetImgByCurrentTime(ImAcq *imAcq)
+cv::Mat imAcqGetImgByCurrentTime(ImAcq *imAcq)
 {
     //Calculate current image number
     if ((imAcq->method == IMACQ_CAM) || (imAcq->method == IMACQ_STREAM))
@@ -156,25 +156,24 @@ cv::Mat *imAcqGetImgByCurrentTime(ImAcq *imAcq)
         return imAcqGrab(imAcq->capture);
     }
 
-    float secondsPassed = static_cast<float>((cvGetTickCount() - imAcq->startTime) / cvGetTickFrequency());
+    float secondsPassed = static_cast<float>((cv::getTickCount() - imAcq->startTime) / cv::getTickFrequency());
     secondsPassed = secondsPassed / 1000000;
 
     int framesPassed = static_cast<int>(secondsPassed * imAcq->fps);
-
     int currentFrame = imAcq->startFrame + framesPassed;
 
-    if (imAcq->lastFrame > 0 && currentFrame > imAcq->lastFrame) return NULL;
+    if (imAcq->lastFrame > 0 && currentFrame > imAcq->lastFrame) return cv::Mat();
 
     return imAcqLoadFrame(imAcq, currentFrame);
 }
 
-cv::Mat *imAcqGetImg(ImAcq *imAcq)
+cv::Mat imAcqGetImg(ImAcq *imAcq)
 {
-    cv::Mat *img = NULL;
+    cv::Mat img;
 
     if (imAcq->method == IMACQ_CAM || imAcq->method == IMACQ_VID)
     {
-        imAcq->capture->read(*img);
+        imAcq->capture->read(img);
     }
 
     if (imAcq->method == IMACQ_IMGS)
@@ -192,13 +191,13 @@ cv::Mat *imAcqGetImg(ImAcq *imAcq)
     return img;
 }
 
-cv::Mat *imAcqGrab(cv::VideoCapture *capture)
+cv::Mat imAcqGrab(cv::VideoCapture *capture)
 {
-    cv::Mat *frame;
+    cv::Mat frame;
 
-    capture->read(*frame);
-
-    if (frame == NULL)
+    capture->read(frame);
+    
+    if (cv::countNonZero(frame) < 1)
     {
         // Sometimes the camera driver needs some time to start
         // sleep 100ms and try again
@@ -206,13 +205,13 @@ cv::Mat *imAcqGrab(cv::VideoCapture *capture)
         {
             printf("Error: Unable to grab image... retry\n");
             msleep(100);
-            capture->read(*frame);
-            if (frame != NULL)
+            capture->read(frame);
+            if (cv::countNonZero(frame) > 0)
             {
                 break;
             }
         }
-        if (frame == NULL)
+        if (cv::countNonZero(frame) < 1)
         {
             exit(-1);
         }
@@ -221,21 +220,21 @@ cv::Mat *imAcqGrab(cv::VideoCapture *capture)
     return frame;
 }
 
-cv::Mat *imAcqGetImgByFrame(ImAcq *imAcq, int fNo)
+cv::Mat imAcqGetImgByFrame(ImAcq *imAcq, int fNo)
 {
     int oldFNo = imAcq->currentFrame;
     imAcq->currentFrame = fNo;
 
-    cv::Mat *img = imAcqGetImg(imAcq);
+    cv::Mat img = imAcqGetImg(imAcq);
 
     imAcq->currentFrame = oldFNo;
 
     return img;
 }
 
-cv::Mat *imAcqGetImgAndAdvance(ImAcq *imAcq)
+cv::Mat imAcqGetImgAndAdvance(ImAcq *imAcq)
 {
-    cv::Mat *img = imAcqGetImg(imAcq);
+    cv::Mat img = imAcqGetImg(imAcq);
     imAcq->currentFrame++;
 
     return img;
@@ -265,16 +264,17 @@ int imAcqVidGetNextFrameNumber(ImAcq *imAcq)
     // OpenCV index starts with 0
     // maybe a OpenCV bug: cvGetCaptureProperty with CV_CAP_PROP_POS_FRAMES returns the LAST
     // frame number to be encoded not the NEXT
-    return ((int)cvGetCaptureProperty(imAcq->capture, CV_CAP_PROP_POS_FRAMES)) + 2;
+    return imAcq->capture->get(cv::CAP_PROP_POS_FRAMES) + 2;
 }
 
 void imAcqVidSetNextFrameNumber(ImAcq *imAcq, int nFrame)
 {
     // OpenCV index starts with 0
-    cvSetCaptureProperty(imAcq->capture, CV_CAP_PROP_POS_FRAMES, nFrame - 2.0);
+    
+    imAcq->capture->set(cv::CAP_PROP_POS_FRAMES, nFrame - 2.0);
 }
 
 int imAcqVidGetNumberOfFrames(ImAcq *imAcq)
 {
-    return (imAcq->capture->get(CV_CAP_PROP_FRAME_COUNT));
+    return (imAcq->capture->get(cv::CAP_PROP_FRAME_COUNT));
 }

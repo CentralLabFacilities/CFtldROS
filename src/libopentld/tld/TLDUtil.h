@@ -29,7 +29,8 @@
 
 #include <utility>
 
-#include <opencv/cv.h>
+#include<opencv2/core/core.hpp>
+#include<opencv2/highgui/highgui.hpp>
 
 namespace tld
 {
@@ -88,8 +89,8 @@ namespace tld
     }
 
     int tldIsInside(int *bb1, int *bb2);
-    void tldRectToPoints(CvRect rect, CvPoint *p1, CvPoint *p2);
-    void tldBoundingBoxToPoints(int *bb, CvPoint *p1, CvPoint *p2);
+    void tldRectToPoints(cv::Rect rect, cv::Point *p1, cv::Point *p2);
+    void tldBoundingBoxToPoints(int *bb, cv::Point *p1, cv::Point *p2);
 
     void tldNormalizeImg(const cv::Mat &img, float *result, int size);
 

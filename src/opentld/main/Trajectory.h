@@ -21,7 +21,9 @@
 #define TRAJECTORY_H_
 
 #include <vector>
-#include <opencv/cv.h>
+#include<opencv2/core/core.hpp>
+#include<opencv2/imgproc.hpp>
+#include<opencv2/highgui/highgui.hpp>
 
 /**
  * @author Clemens Korner
@@ -60,17 +62,17 @@ namespace tld
          * @param point point which specifies the location of the point
          * @param color defines the color (confidence) of the point
          */
-        void addPoint(CvPoint point, CvScalar color);
+        void addPoint(cv::Point point, cv::Scalar color);
 
         /**
          * Draws the trajectory into an image.
          * @param image image to draw
          */
-        void drawTrajectory(IplImage * image);
+        void drawTrajectory(cv::Mat image);
     private:
         std::size_t m_length; ///< number of the last frames which are considered by the trajectory
-        std::vector<CvPoint> m_track_positions; ///< vector containing the locations of the points
-        std::vector<CvScalar> m_track_colors; ///< vector containing the colors of the points
+        std::vector<cv::Point> m_track_positions; ///< vector containing the locations of the points
+        std::vector<cv::Scalar> m_track_colors; ///< vector containing the colors of the points
     };
 }
 

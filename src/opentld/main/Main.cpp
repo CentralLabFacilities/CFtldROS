@@ -80,7 +80,6 @@ void Main::doWork() {
     Trajectory trajectory;
 
     Mat colorImage, depthImage;
-    Mat *img;
 
     ROS_INFO(">>> Setting up ros subcribers");
     image_transport::ImageTransport it(ros_grabber->node_handle_);
@@ -94,8 +93,7 @@ void Main::doWork() {
 
     if (!isRosUsed) {
         printf(">> ROS IS OFF\n");
-        img = imAcqGetImg(imAcq);
-        colorImage = *img;
+        colorImage = imAcqGetImg(imAcq);
     } else {
         ROS_DEBUG(">>> ROS IS ON");
         // first spin, to get callback in the queue
@@ -114,7 +112,6 @@ void Main::doWork() {
         }
         // Don't resize depth image, it is already 320x240 on Pepper!
         // cv::resize(colorImage, colorImage, cv::Size(), 0.375, 0.375);
-        img = &colorImage;
     }
 
     if (colorImage.channels() == 1)
@@ -179,14 +176,12 @@ void Main::doWork() {
 
             if (newBB) {
                 if (!isRosUsed) {
-                    img->release();
-                    img = imAcqGetImg(imAcq);
-                    colorImage = *img;
+                    colorImage.release();
+                    colorImage = imAcqGetImg(imAcq);
                 } else {
                     ros_grabber->getImage(&colorImage);
                     ros_grabber_depth->getImage(&depthImage);
                     //cv::resize(colorImage, colorImage, cv::Size(), 0.375, 0.375);
-                    img = &colorImage;
                     last_frame_nr = ros_grabber->getLastFrameNr();
                 }
 
@@ -209,21 +204,19 @@ void Main::doWork() {
                 if (!reuseFrameOnce && (!paused || step)) {
 
                     if (!isRosUsed) {
-                        img->release();
-                        img = imAcqGetImg(imAcq);
-                        colorImage = *img;
+                        colorImage.release();
+                        colorImage = imAcqGetImg(imAcq);
                     } else {
                         ros_grabber->getImage(&colorImage);
                         ros_grabber_depth->getImage(&depthImage);
                         //cv::resize(colorImage, colorImage, cv::Size(), 0.375, 0.375);
-                        img = &colorImage;
                         last_frame_nr = ros_grabber->getLastFrameNr();
                     }
 
                     if (colorImage.channels() == 1)
                         cv::cvtColor(colorImage, colorImage, cv::COLOR_GRAY2BGR);
 
-                    if (img == NULL) {
+                    if (cv::countNonZero(colorImage) < 1) {
                         printf("current image is NULL, assuming end of input.\n");
                         break;
                     }
@@ -265,16 +258,16 @@ void Main::doWork() {
 
                     sprintf(string, "#%d, fps: %.2f, #numwin:%d, %s", imAcq->currentFrame - 1,
                             fps, tld->detectorCascade->numWindows, learningString);
-                    cv::Scalar yellow = CV_RGB(255, 255, 0);
-                    cv::Scalar black = CV_RGB(0, 0, 0);
-                    cv::Scalar white = CV_RGB(255, 255, 255);
-                    cv::Scalar blue = CV_RGB(30, 144, 255);
+                    cv::Scalar yellow = cv::Scalar(0, 255, 255, 0);
+                    cv::Scalar black = cv::Scalar(0, 0, 0, 0);
+                    cv::Scalar white = cv::Scalar(255, 255, 255, 0);
+                    cv::Scalar blue = cv::Scalar(255, 144, 30, 0);
 
                     people_msgs::People detections;
 
                     if (tld->currBB != NULL) {
                         cv::Scalar rectangleColor = blue;
-                        cvRectangle(img, tld->currBB->tl(), tld->currBB->br(), rectangleColor, 2, 8, 0);
+                        cv::rectangle(colorImage, tld->currBB->tl(), tld->currBB->br(), rectangleColor, 2, 8, 0);
                         geometry_msgs::PoseStamped pose = ros_grabber_depth->getDetectionPose(depthImage, tld->currBB);
                         if (pose.header.frame_id != "invalid") {
                             detections.header = pose.header;
@@ -290,19 +283,19 @@ void Main::doWork() {
                     if (pub_detection.getNumSubscribers() > 0) {
                         pub_detection.publish(detections);
                     }
-                    cv::putText(img, string, cv::Point(15, 15), CV_FONT_HERSHEY_SIMPLEX, 0.4, blue, 1, 8)
+                    cv::putText(colorImage, string, cv::Point(15, 15), cv::FONT_HERSHEY_SIMPLEX, 0.4, blue, 1, 8);
                     pubFrameCount++;;
 
                     // Publish every 6th cycle
                     if (pub.getNumSubscribers() > 0 and last_frame_nr % 6 == 0) {
-                        sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", img).toImageMsg();
+                        sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colorImage).toImageMsg();
                         pub.publish(msg);
                     }
 
                     if (saveDir != NULL) {
                         char fileName[256];
                         sprintf(fileName, "%s/%.5d.png", saveDir, imAcq->currentFrame - 1);
-                        cvSaveImage(fileName, img);
+                        cv::imwrite(fileName, colorImage);
                     }
 		        }
             // frame % 2 == 0
@@ -324,11 +317,8 @@ void Main::doWork() {
 
     ROS_INFO(">>> Bye Bye!");
 
-    if (!isRosUsed) {
-        img->release();
-    }
-
-    img = NULL;
+    colorImage.release();
+    
     delete ros_grabber;
     delete ros_grabber_depth;
 

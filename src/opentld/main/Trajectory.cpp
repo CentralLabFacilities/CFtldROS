@@ -41,11 +41,11 @@ namespace tld
     void Trajectory::init(std::size_t length)
     {
         m_length = length;
-        m_track_positions = vector<CvPoint>();
-        m_track_colors = vector<CvScalar>();
+        m_track_positions = vector<cv::Point>();
+        m_track_colors = vector<cv::Scalar>();
     }
 
-    void Trajectory::addPoint(CvPoint point, CvScalar color)
+    void Trajectory::addPoint(cv::Point point, cv::Scalar color)
     {
         size_t length = m_track_positions.size();
 
@@ -67,9 +67,9 @@ namespace tld
         }
     }
 
-    void Trajectory::drawTrajectory(IplImage * image)
+    void Trajectory::drawTrajectory(cv::Mat image)
     {
-        CvPoint tempPoint;
+        cv::Point tempPoint;
         bool needSecondPoint = false;
 
         for (size_t i = 0; i < m_track_positions.size(); i++)
@@ -82,7 +82,7 @@ namespace tld
             }
             else if (needSecondPoint && (m_track_positions[i].x != -1))
             {
-                cvLine(image, tempPoint, m_track_positions[i], m_track_colors[i], 2);
+                cv::line(image, tempPoint, m_track_positions[i], m_track_colors[i], 2);
                 tempPoint = m_track_positions[i];
             }
         }

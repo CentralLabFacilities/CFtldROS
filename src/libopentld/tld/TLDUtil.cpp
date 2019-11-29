@@ -28,7 +28,7 @@ using namespace cv;
 
 namespace tld
 {
-    void tldRectToPoints(Rect rect, CvPoint *p1, CvPoint *p2)
+    void tldRectToPoints(Rect rect, Point *p1, Point *p2)
     {
         p1->x = rect.x;
         p1->y = rect.y;
@@ -36,7 +36,7 @@ namespace tld
         p2->y = rect.y + rect.height;
     }
 
-    void tldBoundingBoxToPoints(int *bb, CvPoint *p1, CvPoint *p2)
+    void tldBoundingBoxToPoints(int *bb, Point *p1, Point *p2)
     {
         p1->x = bb[0];
         p1->y = bb[1];
@@ -50,7 +50,7 @@ namespace tld
         int size = TLD_PATCH_SIZE;
 
         Mat result;
-        resize(img, result, cvSize(size, size)); //Default is bilinear
+        resize(img, result, cv::Size(size, size)); //Default is bilinear
 
         float mean = 0;
 
@@ -75,12 +75,12 @@ namespace tld
         }
     }
 
-    CvRect tldBoundaryToRect(int *boundary)
+    Rect tldBoundaryToRect(int *boundary)
     {
         return Rect(boundary[0], boundary[1], boundary[2], boundary[3]);
     }
 
-    void tldExtractSubImage(const Mat &img, Mat &subImage, CvRect rect)
+    void tldExtractSubImage(const Mat &img, Mat &subImage, Rect rect)
     {
         subImage = img(rect).clone();
     }

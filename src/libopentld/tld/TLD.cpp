@@ -123,7 +123,7 @@ namespace tld
         rng->seed((unsigned long)seed);
 
         Mat grayFrame;
-        cvtColor(img, grayFrame, CV_BGR2GRAY);
+        cvtColor(img, grayFrame, cv::COLOR_BGR2GRAY);
 
         // initialize the image dimensions once
         if (!hasImageDimensions)
@@ -167,7 +167,7 @@ namespace tld
         storeCurrentData();
 
         Mat grayFrame;
-        cvtColor(img, grayFrame, CV_BGR2GRAY);
+        cvtColor(img, grayFrame, cv::COLOR_BGR2GRAY);
         currImg = grayFrame; // Store new image , right after storeCurrentData();
 
         if (trackerEnabled && runTracker)
