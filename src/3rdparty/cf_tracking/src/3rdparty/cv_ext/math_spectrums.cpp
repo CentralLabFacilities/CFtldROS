@@ -52,6 +52,7 @@
 
 #include "math_spectrums.hpp"
 
+#if CV_MAJOR_VERSION == 3
 void divSpectrums(cv::InputArray _numeratorA, cv::InputArray _denominatorB,
     cv::OutputArray _dst, int flags, bool conjB)
 {
@@ -276,3 +277,4 @@ void divSpectrums(cv::InputArray _numeratorA, cv::InputArray _denominatorB,
         }
     }
 }
+#endif

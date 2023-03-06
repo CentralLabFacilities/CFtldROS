@@ -55,7 +55,7 @@ References:
 PAMI, 2015.
 
 [2] M. Danelljan, et al.,
-“Adaptive Color Attributes for Real-Time Visual Tracking,”
+ï¿½Adaptive Color Attributes for Real-Time Visual Tracking,ï¿½
 in Proc. CVPR, 2014.
 
 [3] M. Danelljan,
@@ -63,7 +63,7 @@ in Proc. CVPR, 2014.
 Proceedings of the British Machine Vision Conference BMVC, 2014.
 
 [4] D. Bolme, et al.,
-“Visual Object Tracking using Adaptive Correlation Filters,”
+ï¿½Visual Object Tracking using Adaptive Correlation Filters,ï¿½
 in Proc. CVPR, 2010.
 */
 
@@ -766,7 +766,7 @@ namespace cf_tracking
             cv::Mat alphaf;
 
             if (_USE_CCS)
-                divSpectrums(_modelNumeratorf, _modelDenominatorf, alphaf);
+                divSpectrums(_modelNumeratorf, _modelDenominatorf, alphaf, 0, false);
             else
                 divideSpectrumsNoCcs<T>(_modelNumeratorf, _modelDenominatorf, alphaf);
 

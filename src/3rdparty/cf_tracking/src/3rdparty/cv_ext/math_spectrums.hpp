@@ -51,8 +51,10 @@
 
 #include <opencv2/core/core.hpp>
 
+#if CV_MAJOR_VERSION == 3
 void divSpectrums(cv::InputArray _numeratorA, cv::InputArray _denominatorB,
     cv::OutputArray _dst, int flags = 0, bool conjB = false);
+#endif
 
 template <typename T>
 cv::Mat addRealToSpectrum(T summand, cv::InputArray _numeratorA, int flags = 0)
